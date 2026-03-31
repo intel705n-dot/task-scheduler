@@ -1,10 +1,24 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Task, Profile, Store, TaskStatus } from '@/lib/types';
 import { TASK_STATUSES, STATUS_COLORS } from '@/lib/types';
 import TaskModal from '@/components/TaskModal';
+
+type SortKey = 'created' | 'status' | 'assignee' | 'store' | 'due_date' | 'title';
+type SortDir = 'asc' | 'desc';
+
+const STATUS_ORDER: Record<string, number> = {
+  '作業中': 0,
+  '未着手': 1,
+  '仕上がり待ち': 2,
+  'データ待ち': 3,
+  '返答待ち': 4,
+  '確認待ち': 5,
+  '保留': 6,
+  '完了': 7,
+};
 
 export default function TaskPanel() {
   const supabase = createClient();
@@ -20,6 +34,10 @@ export default function TaskPanel() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterAssignee, setFilterAssignee] = useState<string>('all');
+
+  // Sort
+  const [sortKey, setSortKey] = useState<SortKey>('created');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   // Modal
   const [modalOpen, setModalOpen] = useState(false);
@@ -94,6 +112,15 @@ export default function TaskPanel() {
     fetchData();
   };
 
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
   // Split by tab
   const tabTasks = tasks.filter((t) => (tab === 'active' ? !t.is_done : t.is_done));
 
@@ -105,6 +132,39 @@ export default function TaskPanel() {
     return true;
   });
 
+  // Apply sort
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    arr.sort((a, b) => {
+      switch (sortKey) {
+        case 'status':
+          return ((STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)) * dir;
+        case 'assignee': {
+          const aName = a.profiles?.display_name || 'zzz';
+          const bName = b.profiles?.display_name || 'zzz';
+          return aName.localeCompare(bName, 'ja') * dir;
+        }
+        case 'store': {
+          const aStore = a.stores?.name || 'zzz';
+          const bStore = b.stores?.name || 'zzz';
+          return aStore.localeCompare(bStore, 'ja') * dir;
+        }
+        case 'due_date': {
+          const aDate = a.due_date || '9999-12-31';
+          const bDate = b.due_date || '9999-12-31';
+          return aDate.localeCompare(bDate) * dir;
+        }
+        case 'title':
+          return a.title.localeCompare(b.title, 'ja') * dir;
+        case 'created':
+        default:
+          return a.created_at.localeCompare(b.created_at) * dir;
+      }
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir]);
+
   // Summary: active tasks per assignee (hide 中谷（オーナー）)
   const assigneeSummary = profiles
     .filter((p) => p.display_name !== '中谷（オーナー）')
@@ -112,6 +172,20 @@ export default function TaskPanel() {
       ...p,
       count: tasks.filter((t) => t.assignee_id === p.id && !t.is_done).length,
     }));
+
+  const SortButton = ({ label, value }: { label: string; value: SortKey }) => (
+    <button
+      onClick={() => handleSort(value)}
+      className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${
+        sortKey === value
+          ? 'bg-indigo-100 text-indigo-700 font-bold'
+          : 'text-gray-500 hover:bg-gray-100'
+      }`}
+    >
+      {label}
+      {sortKey === value && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+    </button>
+  );
 
   if (loading) {
     return (
@@ -173,7 +247,7 @@ export default function TaskPanel() {
       </div>
 
       {/* Filters */}
-      <div className="space-y-1.5 mb-3 flex-shrink-0">
+      <div className="space-y-1.5 mb-2 flex-shrink-0">
         <input
           type="text"
           placeholder="検索..."
@@ -205,9 +279,19 @@ export default function TaskPanel() {
         </div>
       </div>
 
+      {/* Sort buttons */}
+      <div className="flex flex-wrap gap-1 mb-2 flex-shrink-0">
+        <SortButton label="作成日" value="created" />
+        <SortButton label="ステータス" value="status" />
+        <SortButton label="担当者" value="assignee" />
+        <SortButton label="店舗" value="store" />
+        <SortButton label="期限" value="due_date" />
+        <SortButton label="タイトル" value="title" />
+      </div>
+
       {/* Task List - scrollable */}
       <div className="flex-1 overflow-y-auto space-y-1.5 min-h-0">
-        {filtered.map((task) => (
+        {sorted.map((task) => (
           <div
             key={task.id}
             className={`bg-white rounded-lg border border-gray-200 p-2.5 flex items-start gap-2 transition-colors ${task.is_done ? 'opacity-60' : ''}`}
@@ -261,7 +345,7 @@ export default function TaskPanel() {
           </div>
         ))}
 
-        {filtered.length === 0 && (
+        {sorted.length === 0 && (
           <div className="text-center py-8 text-gray-400 text-xs">
             タスクがありません
           </div>
