@@ -43,7 +43,7 @@ export async function updateSession(request: NextRequest) {
   // Redirect authenticated users away from login
   if (user && request.nextUrl.pathname.startsWith('/login')) {
     const url = request.nextUrl.clone();
-    url.pathname = '/tasks';
+    url.pathname = '/calendar';
     return NextResponse.redirect(url);
   }
 
