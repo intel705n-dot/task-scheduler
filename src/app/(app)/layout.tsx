@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
 import TaskPanel from '@/components/TaskPanel';
+import ShortcutPanel from '@/components/ShortcutPanel';
 
 export default function AppLayout({
   children,
@@ -22,6 +23,13 @@ export default function AppLayout({
           }`}
         >
           <TaskPanel />
+        </aside>
+
+        {/* Center: Shortcut Panel */}
+        <aside
+          className={`hidden lg:flex lg:w-48 lg:flex-shrink-0 border-r border-gray-200 bg-gray-50/50 p-3 overflow-hidden flex-col`}
+        >
+          <ShortcutPanel />
         </aside>
 
         {/* Right: Main content (Calendar) */}

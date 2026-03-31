@@ -105,11 +105,13 @@ export default function TaskPanel() {
     return true;
   });
 
-  // Summary: active tasks per assignee
-  const assigneeSummary = profiles.map((p) => ({
-    ...p,
-    count: tasks.filter((t) => t.assignee_id === p.id && !t.is_done).length,
-  }));
+  // Summary: active tasks per assignee (hide 中谷（オーナー）)
+  const assigneeSummary = profiles
+    .filter((p) => p.display_name !== '中谷（オーナー）')
+    .map((p) => ({
+      ...p,
+      count: tasks.filter((t) => t.assignee_id === p.id && !t.is_done).length,
+    }));
 
   if (loading) {
     return (
@@ -123,19 +125,27 @@ export default function TaskPanel() {
     <div className="flex flex-col h-full">
       {/* Summary Widget */}
       <div className="flex gap-2 mb-3 overflow-x-auto pb-1 flex-shrink-0">
-        {assigneeSummary.map((a) => (
-          <div
-            key={a.id}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white border border-gray-200 whitespace-nowrap text-xs"
-          >
-            <span
-              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-              style={{ backgroundColor: a.color }}
-            />
-            <span className="font-medium text-gray-700">{a.display_name}</span>
-            <span className="font-bold text-indigo-600">{a.count}</span>
-          </div>
-        ))}
+        {assigneeSummary.map((a) => {
+          const isSelected = filterAssignee === a.id;
+          return (
+            <button
+              key={a.id}
+              onClick={() => setFilterAssignee(isSelected ? 'all' : a.id)}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border whitespace-nowrap text-xs transition-colors ${
+                isSelected
+                  ? 'bg-indigo-50 border-indigo-400 ring-1 ring-indigo-400'
+                  : 'bg-white border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <span
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                style={{ backgroundColor: a.color }}
+              />
+              <span className="font-medium text-gray-700">{a.display_name}</span>
+              <span className="font-bold text-indigo-600">{a.count}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab: 現行 / 済 */}
