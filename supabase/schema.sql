@@ -159,9 +159,12 @@ begin
     when new.email = 'saya38719@gmail.com' then
       _display_name := '吉栖';
       _color := '#db2777';
-    when new.email in ('phoenix.nakatani@gmail.com', 'kikuchi@leisurelarce.co.jp') then
+    when new.email = 'phoenix.nakatani@gmail.com' then
       _display_name := '中谷';
       _color := '#0891b2';
+    when new.email = 'kikuchi@leisurelarce.co.jp' then
+      _display_name := '菊池（サブ）';
+      _color := '#2563eb';
     when new.email = 'intel705n@gmail.com' then
       _display_name := '中谷（オーナー）';
       _color := '#0891b2';

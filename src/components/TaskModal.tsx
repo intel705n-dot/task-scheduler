@@ -104,7 +104,9 @@ export default function TaskModal({ task, profiles, stores, onSave, onDelete, on
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900"
               >
                 <option value="">未割当</option>
-                {profiles.map((p) => (
+                {profiles
+                  .filter((p) => !['中谷（オーナー）', '菊池（サブ）'].includes(p.display_name))
+                  .map((p) => (
                   <option key={p.id} value={p.id}>{p.display_name}</option>
                 ))}
               </select>

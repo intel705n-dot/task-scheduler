@@ -165,9 +165,10 @@ export default function TaskPanel() {
     return arr;
   }, [filtered, sortKey, sortDir]);
 
-  // Summary: active tasks per assignee (hide 中谷（オーナー）)
+  // Summary: active tasks per assignee (hide 中谷（オーナー） and 菊池（サブ）)
+  const hiddenProfiles = ['中谷（オーナー）', '菊池（サブ）'];
   const assigneeSummary = profiles
-    .filter((p) => p.display_name !== '中谷（オーナー）')
+    .filter((p) => !hiddenProfiles.includes(p.display_name))
     .map((p) => ({
       ...p,
       count: tasks.filter((t) => t.assignee_id === p.id && !t.is_done).length,
@@ -272,7 +273,9 @@ export default function TaskPanel() {
             className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900"
           >
             <option value="all">全担当者</option>
-            {profiles.map((p) => (
+            {profiles
+              .filter((p) => !hiddenProfiles.includes(p.display_name))
+              .map((p) => (
               <option key={p.id} value={p.id}>{p.display_name}</option>
             ))}
           </select>
