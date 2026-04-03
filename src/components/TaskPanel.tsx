@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { Task, Profile, Store, TaskStatus } from '@/lib/types';
 import { TASK_STATUSES, STATUS_COLORS } from '@/lib/types';
 import TaskModal from '@/components/TaskModal';
+import * as XLSX from 'xlsx';
 
 type SortKey = 'created' | 'status' | 'assignee' | 'store' | 'due_date' | 'title';
 type SortDir = 'asc' | 'desc';
@@ -174,6 +175,28 @@ export default function TaskPanel() {
       count: tasks.filter((t) => t.assignee_id === p.id && !t.is_done).length,
     }));
 
+  const handleExportExcel = () => {
+    const rows = sorted.map((t) => ({
+      'タイトル': t.title,
+      'ステータス': t.status,
+      '担当者': t.profiles?.display_name || '',
+      '店舗': t.stores?.name || '',
+      '期限': t.due_date || '',
+      'メモ': t.notes || '',
+      '作成日': t.created_at.slice(0, 10),
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    // 列幅を設定
+    ws['!cols'] = [
+      { wch: 30 }, { wch: 12 }, { wch: 10 },
+      { wch: 15 }, { wch: 12 }, { wch: 30 }, { wch: 12 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'タスク一覧');
+    const date = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `タスク一覧_${date}.xlsx`);
+  };
+
   const SortButton = ({ label, value }: { label: string; value: SortKey }) => (
     <button
       onClick={() => handleSort(value)}
@@ -282,14 +305,21 @@ export default function TaskPanel() {
         </div>
       </div>
 
-      {/* Sort buttons */}
-      <div className="flex flex-wrap gap-1 mb-2 flex-shrink-0">
+      {/* Sort buttons + Excel export */}
+      <div className="flex flex-wrap gap-1 mb-2 flex-shrink-0 items-center">
         <SortButton label="作成日" value="created" />
         <SortButton label="ステータス" value="status" />
         <SortButton label="担当者" value="assignee" />
         <SortButton label="店舗" value="store" />
         <SortButton label="期限" value="due_date" />
         <SortButton label="タイトル" value="title" />
+        <button
+          onClick={handleExportExcel}
+          className="ml-auto px-2 py-0.5 rounded text-[10px] bg-green-100 text-green-700 hover:bg-green-200 transition-colors font-medium"
+          title="表示中のタスクをExcel出力"
+        >
+          Excel出力
+        </button>
       </div>
 
       {/* Task List - scrollable */}
