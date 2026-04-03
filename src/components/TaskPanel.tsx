@@ -305,21 +305,14 @@ export default function TaskPanel() {
         </div>
       </div>
 
-      {/* Sort buttons + Excel export */}
-      <div className="flex flex-wrap gap-1 mb-2 flex-shrink-0 items-center">
+      {/* Sort buttons */}
+      <div className="flex flex-wrap gap-1 mb-2 flex-shrink-0">
         <SortButton label="作成日" value="created" />
         <SortButton label="ステータス" value="status" />
         <SortButton label="担当者" value="assignee" />
         <SortButton label="店舗" value="store" />
         <SortButton label="期限" value="due_date" />
         <SortButton label="タイトル" value="title" />
-        <button
-          onClick={handleExportExcel}
-          className="ml-auto px-2 py-0.5 rounded text-[10px] bg-green-100 text-green-700 hover:bg-green-200 transition-colors font-medium"
-          title="表示中のタスクをExcel出力"
-        >
-          Excel出力
-        </button>
       </div>
 
       {/* Task List - scrollable */}
@@ -385,16 +378,25 @@ export default function TaskPanel() {
         )}
       </div>
 
-      {/* Add Button */}
-      <button
-        onClick={() => {
-          setEditingTask(null);
-          setModalOpen(true);
-        }}
-        className="mt-2 w-full bg-indigo-600 text-white py-2 rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors flex-shrink-0"
-      >
-        ＋ タスク追加
-      </button>
+      {/* Add Button + Excel Export */}
+      <div className="mt-2 flex gap-1.5 flex-shrink-0">
+        <button
+          onClick={() => {
+            setEditingTask(null);
+            setModalOpen(true);
+          }}
+          className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+        >
+          ＋ タスク追加
+        </button>
+        <button
+          onClick={handleExportExcel}
+          className="px-3 py-2 rounded-lg text-xs font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+          title="表示中のタスクをExcel出力"
+        >
+          Excel
+        </button>
+      </div>
 
       {/* Modal */}
       {modalOpen && (
