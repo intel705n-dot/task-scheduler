@@ -68,7 +68,7 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
     (async () => {
       const [user, ss, ps] = await Promise.all([
         supabase.auth.getUser(),
-        supabase.from('stores').select('*').order('id'),
+        supabase.from('stores').select('*').order('ord').order('id'),
         supabase.from('profiles').select('*'),
       ]);
       setActor(user.data.user?.email ?? 'unknown');

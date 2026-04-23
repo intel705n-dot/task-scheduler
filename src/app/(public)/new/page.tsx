@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export default async function NewRequestPage() {
   const supabase = await createClient();
   const [{ data: stores }, presets] = await Promise.all([
-    supabase.from('stores').select('*').order('id'),
+    supabase.from('stores').select('*').order('ord').order('id'),
     fetchPresets(supabase).catch(() => []),
   ]);
 

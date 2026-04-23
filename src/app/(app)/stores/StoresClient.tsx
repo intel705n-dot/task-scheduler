@@ -9,7 +9,7 @@ export default function StoresClient() {
   const [stores, setStores] = useState<Store[]>([]);
 
   const refresh = useCallback(async () => {
-    const { data } = await supabase.from('stores').select('*').order('id');
+    const { data } = await supabase.from('stores').select('*').order('ord').order('id');
     if (data) setStores(data as Store[]);
   }, [supabase]);
 

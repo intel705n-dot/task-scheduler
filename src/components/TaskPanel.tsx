@@ -51,7 +51,7 @@ export default function TaskPanel() {
         .select('*, profiles(*), stores(*)')
         .order('created_at', { ascending: false }),
       supabase.from('profiles').select('*'),
-      supabase.from('stores').select('*'),
+      supabase.from('stores').select('*').order('ord').order('id'),
     ]);
     if (tasksRes.data) setTasks(tasksRes.data);
     if (profilesRes.data) setProfiles(profilesRes.data);
@@ -129,15 +129,23 @@ export default function TaskPanel() {
   const filtered = tabTasks.filter((t) => {
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterStatus !== 'all' && t.status !== filterStatus) return false;
-    if (filterAssignee !== 'all' && t.assignee_id !== filterAssignee) return false;
+    if (filterAssignee === 'unassigned') {
+      if (t.assignee_id) return false;
+    } else if (filterAssignee !== 'all') {
+      if (t.assignee_id !== filterAssignee) return false;
+    }
     return true;
   });
 
-  // Apply sort
+  // Apply sort. Requests tasks (linked_request_id 非NULL) をトップに固定。
   const sorted = useMemo(() => {
     const arr = [...filtered];
     const dir = sortDir === 'asc' ? 1 : -1;
     arr.sort((a, b) => {
+      // リクエスト由来のタスクは常に最上部
+      const aIsReq = Boolean(a.linked_request_id);
+      const bIsReq = Boolean(b.linked_request_id);
+      if (aIsReq !== bIsReq) return aIsReq ? -1 : 1;
       switch (sortKey) {
         case 'status':
           return ((STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)) * dir;
@@ -168,12 +176,28 @@ export default function TaskPanel() {
 
   // Summary: active tasks per assignee (hide 中谷（オーナー） and 菊池（サブ）)
   const hiddenProfiles = ['中谷（オーナー）', '菊池（サブ）'];
-  const assigneeSummary = profiles
+  // 表示順を明示: 中谷 → 吉栖 → 菊池
+  const ASSIGNEE_ORDER = ['中谷', '吉栖', '菊池'];
+  const visibleProfiles = profiles
     .filter((p) => !hiddenProfiles.includes(p.display_name))
-    .map((p) => ({
-      ...p,
-      count: tasks.filter((t) => t.assignee_id === p.id && !t.is_done).length,
-    }));
+    .sort((a, b) => {
+      const ai = ASSIGNEE_ORDER.indexOf(a.display_name);
+      const bi = ASSIGNEE_ORDER.indexOf(b.display_name);
+      const aa = ai < 0 ? 999 : ai;
+      const bb = bi < 0 ? 999 : bi;
+      return aa - bb;
+    });
+  const assigneeSummary = visibleProfiles.map((p) => ({
+    ...p,
+    count: tasks.filter((t) => t.assignee_id === p.id && !t.is_done).length,
+  }));
+  const totalActive = tasks.filter((t) => !t.is_done).length;
+  const unassignedActive = tasks.filter((t) => !t.is_done && !t.assignee_id).length;
+
+  const handleQuickAssign = async (taskId: string, assigneeId: string | null) => {
+    await supabase.from('tasks').update({ assignee_id: assigneeId }).eq('id', taskId);
+    fetchData();
+  };
 
   const handleExportExcel = () => {
     const rows = sorted.map((t) => ({
@@ -221,29 +245,59 @@ export default function TaskPanel() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Summary Widget */}
-      <div className="flex gap-2 mb-3 overflow-x-auto pb-1 flex-shrink-0">
-        {assigneeSummary.map((a) => {
-          const isSelected = filterAssignee === a.id;
-          return (
-            <button
-              key={a.id}
-              onClick={() => setFilterAssignee(isSelected ? 'all' : a.id)}
-              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border whitespace-nowrap text-xs transition-colors ${
-                isSelected
-                  ? 'bg-indigo-50 border-indigo-400 ring-1 ring-indigo-400'
-                  : 'bg-white border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <span
-                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: a.color }}
-              />
-              <span className="font-medium text-gray-700">{a.display_name}</span>
-              <span className="font-bold text-indigo-600">{a.count}</span>
-            </button>
-          );
-        })}
+      {/* Summary Widget - 2段レイアウト */}
+      <div className="mb-3 flex-shrink-0 space-y-1.5">
+        {/* 1段目: 全担当者 / 未振り分け */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilterAssignee('all')}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border whitespace-nowrap text-xs transition-colors ${
+              filterAssignee === 'all'
+                ? 'bg-indigo-50 border-indigo-400 ring-1 ring-indigo-400'
+                : 'bg-white border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <span className="font-medium text-gray-700">全担当者</span>
+            <span className="font-bold text-indigo-600">{totalActive}</span>
+          </button>
+          <button
+            onClick={() =>
+              setFilterAssignee(filterAssignee === 'unassigned' ? 'all' : 'unassigned')
+            }
+            className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border whitespace-nowrap text-xs transition-colors ${
+              filterAssignee === 'unassigned'
+                ? 'bg-red-50 border-red-400 ring-1 ring-red-400'
+                : 'bg-white border-gray-200 hover:border-red-300'
+            }`}
+          >
+            <span className="font-medium text-gray-700">未振り分け</span>
+            <span className="font-bold text-red-600">{unassignedActive}</span>
+          </button>
+        </div>
+        {/* 2段目: 中谷 / 吉栖 / 菊池 */}
+        <div className="flex gap-2">
+          {assigneeSummary.map((a) => {
+            const isSelected = filterAssignee === a.id;
+            return (
+              <button
+                key={a.id}
+                onClick={() => setFilterAssignee(isSelected ? 'all' : a.id)}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border whitespace-nowrap text-xs transition-colors ${
+                  isSelected
+                    ? 'bg-indigo-50 border-indigo-400 ring-1 ring-indigo-400'
+                    : 'bg-white border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: a.color }}
+                />
+                <span className="font-medium text-gray-700">{a.display_name}</span>
+                <span className="font-bold text-indigo-600">{a.count}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Tab: 現行 / 済 */}
@@ -317,59 +371,96 @@ export default function TaskPanel() {
 
       {/* Task List - scrollable */}
       <div className="flex-1 overflow-y-auto space-y-1.5 min-h-0">
-        {sorted.map((task) => (
-          <div
-            key={task.id}
-            className={`bg-white rounded-lg border border-gray-200 p-2.5 flex items-start gap-2 transition-colors ${task.is_done ? 'opacity-60' : ''}`}
-          >
-            <input
-              type="checkbox"
-              checked={task.is_done}
-              onChange={() => handleToggleDone(task)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap gap-1 mb-0.5">
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${STATUS_COLORS[task.status]}`}>
-                  {task.status}
-                </span>
-                {task.profiles && (
-                  <span
-                    className="text-[10px] px-1.5 py-0.5 rounded-full font-medium text-white"
-                    style={{ backgroundColor: task.profiles.color }}
-                  >
-                    {task.profiles.display_name}
+        {sorted.map((task) => {
+          const isRequest = Boolean(task.linked_request_id);
+          const isUnassignedRequest = isRequest && !task.assignee_id;
+          return (
+            <div
+              key={task.id}
+              className={`rounded-lg p-2.5 flex items-start gap-2 transition-colors ${
+                task.is_done ? 'opacity-60' : ''
+              } ${
+                isUnassignedRequest
+                  ? 'bg-red-50 border-2 border-red-400 shadow-sm ring-1 ring-red-200'
+                  : isRequest
+                    ? 'bg-amber-50 border-2 border-amber-300'
+                    : 'bg-white border border-gray-200'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={task.is_done}
+                onChange={() => handleToggleDone(task)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap gap-1 mb-0.5">
+                  {isRequest && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-red-600 text-white">
+                      📄 依頼
+                    </span>
+                  )}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${STATUS_COLORS[task.status]}`}>
+                    {task.status}
                   </span>
+                  {task.profiles && (
+                    <span
+                      className="text-[10px] px-1.5 py-0.5 rounded-full font-medium text-white"
+                      style={{ backgroundColor: task.profiles.color }}
+                    >
+                      {task.profiles.display_name}
+                    </span>
+                  )}
+                  {task.stores && (
+                    <span
+                      className="text-[10px] px-1.5 py-0.5 rounded-full font-medium text-white"
+                      style={{ backgroundColor: task.stores.color }}
+                    >
+                      {task.stores.name}
+                    </span>
+                  )}
+                </div>
+                <p className={`text-xs font-medium text-gray-900 leading-tight ${task.is_done ? 'line-through' : ''}`}>
+                  {task.title}
+                </p>
+                {task.due_date && (
+                  <p className="text-[10px] text-gray-400 mt-0.5">期限: {task.due_date}</p>
                 )}
-                {task.stores && (
-                  <span
-                    className="text-[10px] px-1.5 py-0.5 rounded-full font-medium text-white"
-                    style={{ backgroundColor: task.stores.color }}
-                  >
-                    {task.stores.name}
-                  </span>
+                {/* ワンアクション担当者振り分け (未割当 or 依頼由来の時のみ表示) */}
+                {(isUnassignedRequest || !task.assignee_id) && (
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    <span className="text-[10px] text-gray-500 leading-5">振分:</span>
+                    {visibleProfiles.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => handleQuickAssign(task.id, p.id)}
+                        className="text-[10px] rounded-full border px-2 py-0.5 font-medium text-white transition hover:brightness-110"
+                        style={{
+                          backgroundColor: p.color,
+                          borderColor: p.color,
+                        }}
+                      >
+                        {p.display_name}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
-              <p className={`text-xs font-medium text-gray-900 leading-tight ${task.is_done ? 'line-through' : ''}`}>
-                {task.title}
-              </p>
-              {task.due_date && (
-                <p className="text-[10px] text-gray-400 mt-0.5">期限: {task.due_date}</p>
-              )}
+              <button
+                onClick={() => {
+                  setEditingTask(task);
+                  setModalOpen(true);
+                }}
+                className="text-gray-400 hover:text-gray-600 flex-shrink-0 p-0.5"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
             </div>
-            <button
-              onClick={() => {
-                setEditingTask(task);
-                setModalOpen(true);
-              }}
-              className="text-gray-400 hover:text-gray-600 flex-shrink-0 p-0.5"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </button>
-          </div>
-        ))}
+          );
+        })}
 
         {sorted.length === 0 && (
           <div className="text-center py-8 text-gray-400 text-xs">

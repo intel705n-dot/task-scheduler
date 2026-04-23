@@ -59,7 +59,7 @@ export default function CalendarPage() {
         .lte('due_date', endDate)
         .neq('status', 'cancelled'),
       supabase.from('profiles').select('*'),
-      supabase.from('stores').select('*'),
+      supabase.from('stores').select('*').order('ord').order('id'),
     ]);
     if (eventsRes.data) setEvents(eventsRes.data);
     if (requestsRes.data) setRequests(requestsRes.data as RequestRow[]);

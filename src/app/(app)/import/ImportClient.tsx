@@ -34,6 +34,7 @@ export default function ImportClient() {
     supabase
       .from('stores')
       .select('*')
+      .order('ord')
       .order('id')
       .then(({ data }) => {
         if (data) setStores(data as Store[]);
