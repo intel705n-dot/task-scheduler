@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Task, TaskStatus, Profile, Store } from '@/lib/types';
+import type { Task, TaskStatus, TaskPriority, Profile, Store } from '@/lib/types';
 import { TASK_STATUSES } from '@/lib/types';
+
+const TASK_PRIORITIES: TaskPriority[] = ['通常', '不死！'];
 
 type TaskFormData = {
   title: string;
   status: TaskStatus;
+  priority: TaskPriority;
   assignee_id: string;
   store_id: string;
   due_date: string;
@@ -26,6 +29,7 @@ export default function TaskModal({ task, profiles, stores, onSave, onDelete, on
   const [form, setForm] = useState<TaskFormData>({
     title: '',
     status: '未着手',
+    priority: '通常',
     assignee_id: '',
     store_id: '',
     due_date: '',
@@ -38,6 +42,7 @@ export default function TaskModal({ task, profiles, stores, onSave, onDelete, on
       setForm({
         title: task.title,
         status: task.status,
+        priority: task.priority ?? '通常',
         assignee_id: task.assignee_id || '',
         store_id: task.store_id?.toString() || '',
         due_date: task.due_date || '',
@@ -82,17 +87,31 @@ export default function TaskModal({ task, profiles, stores, onSave, onDelete, on
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ステータス</label>
-            <select
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value as TaskStatus })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900"
-            >
-              {TASK_STATUSES.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ステータス</label>
+              <select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value as TaskStatus })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900"
+              >
+                {TASK_STATUSES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">優先度</label>
+              <select
+                value={form.priority}
+                onChange={(e) => setForm({ ...form, priority: e.target.value as TaskPriority })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900"
+              >
+                {TASK_PRIORITIES.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

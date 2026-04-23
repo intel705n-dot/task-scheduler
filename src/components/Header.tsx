@@ -117,7 +117,7 @@ export default function Header({ mobileView, onMobileViewChange }: Props) {
                   <button
                     onClick={() => setAdminMenuOpen((v) => !v)}
                     className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                      pathname?.startsWith('/presets') || pathname?.startsWith('/stores') || pathname?.startsWith('/import')
+                      pathname?.startsWith('/presets') || pathname?.startsWith('/stores') || pathname?.startsWith('/import') || pathname?.startsWith('/requests')
                         ? 'bg-indigo-50 text-indigo-700'
                         : 'text-gray-600 hover:bg-gray-100'
                     }`}
@@ -126,6 +126,9 @@ export default function Header({ mobileView, onMobileViewChange }: Props) {
                   </button>
                   {adminMenuOpen && (
                     <div className="absolute left-0 top-full z-30 mt-1 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                      <AdminMenuLink href="/requests/kanban" onClick={() => setAdminMenuOpen(false)}>
+                        依頼カンバン
+                      </AdminMenuLink>
                       <AdminMenuLink href="/presets" onClick={() => setAdminMenuOpen(false)}>
                         プリセット
                       </AdminMenuLink>

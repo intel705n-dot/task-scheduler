@@ -22,10 +22,13 @@ export type TaskStatus =
   | '確認待ち'
   | '完了';
 
+export type TaskPriority = '不死！' | '通常';
+
 export type Task = {
   id: string;
   title: string;
   status: TaskStatus;
+  priority: TaskPriority;
   assignee_id: string | null;
   store_id: number | null;
   due_date: string | null;
@@ -39,12 +42,15 @@ export type Task = {
   stores?: Store | null;
 };
 
+export type EventPriority = '不死！' | '蘭○' | '他' | '通常';
+
 export type CalendarEvent = {
   id: string;
   title: string;
   event_date: string;
   start_time: string | null;
   end_time: string | null;
+  priority: EventPriority;
   assignee_id: string | null;
   store_id: number | null;
   notes: string | null;

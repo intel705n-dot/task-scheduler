@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { CalendarEvent, Profile, Store } from '@/lib/types';
+import Link from 'next/link';
+import type { CalendarEvent, EventPriority, Profile, RequestRow, Store } from '@/lib/types';
 import EventModal from '@/components/EventModal';
 
 const WEEKDAY_LABELS = ['月', '火', '水', '木', '金', '土', '日'];
@@ -28,6 +29,7 @@ export default function CalendarPage() {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [requests, setRequests] = useState<RequestRow[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,17 +44,25 @@ export default function CalendarPage() {
     const endDay = getDaysInMonth(year, month);
     const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
-    const [eventsRes, profilesRes, storesRes] = await Promise.all([
+    const [eventsRes, requestsRes, profilesRes, storesRes] = await Promise.all([
       supabase
         .from('events')
         .select('*, profiles(*), stores(*)')
         .gte('event_date', startDate)
         .lte('event_date', endDate)
         .order('start_time', { ascending: true }),
+      // 依頼の納期もカレンダーに出す。月内に入る due_date だけ引いてくる。
+      supabase
+        .from('requests')
+        .select('*, stores(*), profiles(*)')
+        .gte('due_date', startDate)
+        .lte('due_date', endDate)
+        .neq('status', 'cancelled'),
       supabase.from('profiles').select('*'),
       supabase.from('stores').select('*'),
     ]);
     if (eventsRes.data) setEvents(eventsRes.data);
+    if (requestsRes.data) setRequests(requestsRes.data as RequestRow[]);
     if (profilesRes.data) setProfiles(profilesRes.data);
     if (storesRes.data) setStores(storesRes.data);
     setLoading(false);
@@ -86,6 +96,7 @@ export default function CalendarPage() {
       event_date: string;
       start_time: string;
       end_time: string;
+      priority: EventPriority;
       assignee_id: string;
       store_id: string;
       notes: string;
@@ -97,6 +108,7 @@ export default function CalendarPage() {
       event_date: data.event_date,
       start_time: data.start_time || null,
       end_time: data.end_time || null,
+      priority: data.priority,
       assignee_id: data.assignee_id || null,
       store_id: data.store_id ? parseInt(data.store_id) : null,
       notes: data.notes || null,
@@ -188,6 +200,7 @@ export default function CalendarPage() {
 
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const dayEvents = events.filter((e) => e.event_date === dateStr);
+            const dayRequests = requests.filter((r) => r.due_date === dateStr);
             const dayOfWeek = (firstDay + day - 1) % 7;
             const isToday = dateStr === todayStr;
 
@@ -215,16 +228,56 @@ export default function CalendarPage() {
                   {day}
                 </div>
                 <div className="space-y-0.5">
+                  {/* 依頼の納期バッジ (クリックで案件詳細へ) */}
+                  {dayRequests.map((req) => {
+                    const storeColor = req.stores?.color || '#6b7280';
+                    return (
+                      <Link
+                        key={`req-${req.id}`}
+                        href={`/requests/${req.id}`}
+                        className="block rounded border border-dashed px-1 py-0.5 text-[10px] hover:brightness-95"
+                        style={{
+                          backgroundColor: storeColor + '14',
+                          borderColor: storeColor + '70',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        title={`依頼納期: ${req.title}`}
+                      >
+                        <span
+                          className="mr-0.5 inline-block rounded px-1 py-0 text-[9px] font-bold text-white"
+                          style={{ backgroundColor: storeColor }}
+                        >
+                          📄依頼
+                        </span>
+                        {req.priority !== 'normal' && (
+                          <span
+                            className={`mr-0.5 inline-block rounded px-1 py-0 text-[9px] font-bold ${
+                              req.priority === 'urgent'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-amber-500 text-white'
+                            }`}
+                          >
+                            {req.priority === 'urgent' ? '緊急' : '優先'}
+                          </span>
+                        )}
+                        <span className="break-words text-gray-900">{req.title}</span>
+                      </Link>
+                    );
+                  })}
+
                   {dayEvents.map((evt) => {
                     const timeStr = formatTime(evt.start_time);
                     const assigneeColor = evt.profiles?.color || '#9ca3af';
+                    const isFushi = evt.priority === '不死！';
                     return (
                       <div
                         key={evt.id}
-                        className="text-[10px] sm:text-xs px-1 py-0.5 rounded border-l-[3px] cursor-pointer hover:brightness-95 transition-all"
+                        className={`text-[10px] sm:text-xs px-1 py-0.5 rounded border-l-[3px] cursor-pointer hover:brightness-95 transition-all ${
+                          isFushi ? 'ring-1 ring-red-500' : ''
+                        }`}
                         style={{
-                          backgroundColor: assigneeColor + '18',
-                          borderColor: assigneeColor,
+                          backgroundColor: isFushi ? '#fee2e2' : assigneeColor + '18',
+                          borderColor: isFushi ? '#dc2626' : assigneeColor,
                           borderTopWidth: '1px',
                           borderRightWidth: '1px',
                           borderBottomWidth: '1px',
@@ -239,6 +292,20 @@ export default function CalendarPage() {
                           setModalOpen(true);
                         }}
                       >
+                        {/* 優先度 */}
+                        {evt.priority && evt.priority !== '通常' && (
+                          <span
+                            className={`inline-block px-1 py-0 rounded text-[9px] font-bold mr-0.5 ${
+                              isFushi
+                                ? 'bg-red-600 text-white'
+                                : evt.priority === '蘭○'
+                                  ? 'bg-purple-600 text-white'
+                                  : 'bg-gray-500 text-white'
+                            }`}
+                          >
+                            {evt.priority}
+                          </span>
+                        )}
                         {/* 担当者 */}
                         {evt.profiles && (
                           <span
