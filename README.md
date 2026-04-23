@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# タスク・スケジュール管理 Web アプリ
 
-## Getting Started
+Next.js 14 + Supabase + Tailwind CSS によるタスク管理 & カレンダーアプリ。
 
-First, run the development server:
+## セットアップ手順
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### 1. Supabase プロジェクト設定
+
+1. [Supabase ダッシュボード](https://supabase.com/dashboard) でプロジェクトを開く
+2. **SQL Editor** で `supabase/schema.sql` の内容をすべて実行
+3. **Authentication > URL Configuration** で以下を設定:
+   - Site URL: `https://your-app.vercel.app`（デプロイ後のURL）
+   - Redirect URLs: `https://your-app.vercel.app/auth/callback`
+4. **Authentication > Providers > Email** で:
+   - Enable Email provider: ON
+   - Enable Email OTP (Magic Link): ON
+
+### 2. 環境変数
+
+`.env.local` を編集し、Supabase の API キーを設定:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://nepslbltrifujcdxffnh.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=（Settings > API から取得）
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. ローカル開発
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+http://localhost:3000 でアクセス。
 
-## Learn More
+### 4. Vercel へデプロイ
 
-To learn more about Next.js, take a look at the following resources:
+1. GitHub にリポジトリを push
+2. [Vercel](https://vercel.com) でリポジトリをインポート
+3. Environment Variables に以下を追加:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Deploy をクリック
+5. デプロイ後の URL を Supabase の Redirect URLs に追加
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 機能
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Magic Link 認証**: 許可メールのみログイン可能
+- **タスク管理**: ステータス・担当者・店舗・優先度でカード表示、フィルター・検索
+- **カレンダー**: 月表示、日付クリックで予定追加、イベント編集・削除
+- **レスポンシブ**: スマホ・PC 両対応
 
-## Deploy on Vercel
+## 技術スタック
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Next.js 14 (App Router) + TypeScript
+- Supabase (PostgreSQL + Auth)
+- Tailwind CSS
+- Vercel

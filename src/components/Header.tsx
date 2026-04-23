@@ -1,7 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Profile } from '@/lib/types';
 
@@ -12,6 +13,7 @@ type Props = {
 
 export default function Header({ mobileView, onMobileViewChange }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = createClient();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userEmail, setUserEmail] = useState('');
@@ -19,6 +21,19 @@ export default function Header({ mobileView, onMobileViewChange }: Props) {
   const [newPassword, setNewPassword] = useState('');
   const [passwordMsg, setPasswordMsg] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const adminMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!adminMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target as Node)) {
+        setAdminMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [adminMenuOpen]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -88,12 +103,42 @@ export default function Header({ mobileView, onMobileViewChange }: Props) {
               </button>
             </nav>
 
-            {/* Desktop title */}
-            <div className="hidden lg:flex items-center gap-2">
-              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-              <span className="font-bold text-gray-900">タスク・スケジュール管理</span>
+            {/* Desktop title + nav */}
+            <div className="hidden lg:flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                <span className="font-bold text-gray-900">TSUKURU</span>
+              </div>
+              <nav className="flex items-center gap-1">
+                <NavLink href="/calendar" current={pathname}>カレンダー</NavLink>
+                <div className="relative" ref={adminMenuRef}>
+                  <button
+                    onClick={() => setAdminMenuOpen((v) => !v)}
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                      pathname?.startsWith('/presets') || pathname?.startsWith('/stores') || pathname?.startsWith('/import')
+                        ? 'bg-indigo-50 text-indigo-700'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    管理 ▾
+                  </button>
+                  {adminMenuOpen && (
+                    <div className="absolute left-0 top-full z-30 mt-1 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                      <AdminMenuLink href="/presets" onClick={() => setAdminMenuOpen(false)}>
+                        プリセット
+                      </AdminMenuLink>
+                      <AdminMenuLink href="/stores" onClick={() => setAdminMenuOpen(false)}>
+                        店舗マスタ
+                      </AdminMenuLink>
+                      <AdminMenuLink href="/import" onClick={() => setAdminMenuOpen(false)}>
+                        データ移行
+                      </AdminMenuLink>
+                    </div>
+                  )}
+                </div>
+              </nav>
             </div>
 
             <div className="flex items-center gap-3">
@@ -193,5 +238,49 @@ export default function Header({ mobileView, onMobileViewChange }: Props) {
         </div>
       )}
     </>
+  );
+}
+
+function NavLink({
+  href,
+  current,
+  children,
+}: {
+  href: string;
+  current: string | null;
+  children: React.ReactNode;
+}) {
+  const active = current === href || (href !== '/' && current?.startsWith(href));
+  return (
+    <Link
+      href={href}
+      className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+        active
+          ? 'bg-indigo-50 text-indigo-700'
+          : 'text-gray-600 hover:bg-gray-100'
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function AdminMenuLink({
+  href,
+  onClick,
+  children,
+}: {
+  href: string;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+    >
+      {children}
+    </Link>
   );
 }

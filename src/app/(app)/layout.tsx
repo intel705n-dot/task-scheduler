@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Header from '@/components/Header';
-import TaskPanel from '@/components/TaskPanel';
+import LeftPanel from '@/components/LeftPanel';
 import ShortcutPanel from '@/components/ShortcutPanel';
 
 export default function AppLayout({
@@ -22,7 +22,7 @@ export default function AppLayout({
             mobileView === 'tasks' ? 'flex' : 'hidden lg:flex'
           }`}
         >
-          <TaskPanel />
+          <LeftPanel />
         </aside>
 
         {/* Center: Shortcut Panel */}

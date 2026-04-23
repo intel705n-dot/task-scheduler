@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+// Next.js 14 style: cookies() is synchronous here.
+// TSUKURU 合併後はこちらを `createClient` という名前でも使う (エイリアス export)。
 export function createServerSupabaseClient() {
   const cookieStore = cookies();
 
@@ -25,3 +27,6 @@ export function createServerSupabaseClient() {
     }
   );
 }
+
+// New code uses createClient(); keep existing callers working too.
+export const createClient = createServerSupabaseClient;

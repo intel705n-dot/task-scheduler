@@ -31,6 +31,7 @@ export type Task = {
   due_date: string | null;
   is_done: boolean;
   notes: string | null;
+  linked_request_id: string | null;
   created_at: string;
   updated_at: string;
   // joined
@@ -75,4 +76,182 @@ export const STATUS_COLORS: Record<TaskStatus, string> = {
   'データ待ち': 'bg-purple-500 text-white',
   '確認待ち': 'bg-teal-500 text-white',
   '完了': 'bg-green-500 text-white',
+};
+
+// ============================================================
+// 制作依頼 (2026-04-22 TSUKURU 合併)
+// ============================================================
+
+export type DeliverableCategory =
+  | 'poster'
+  | 'pop'
+  | 'businessCard'
+  | 'award'
+  | 'other';
+
+export type DeliverableStatus =
+  | 'pending'
+  | 'inProgress'
+  | 'reviewing'
+  | 'completed'
+  | 'cancelled';
+
+export type RequestStatus = 'pending' | 'inProgress' | 'completed' | 'cancelled';
+
+export type RequestPriority = 'normal' | 'high' | 'urgent';
+
+export type Orientation = 'vertical' | 'horizontal' | 'free' | 'other';
+
+export type PosterPopDetails = {
+  sizes: string[];
+  orientation: Orientation;
+  orientationOther?: string;
+  printCount?: number;
+  paperType?: string;
+  deliverySize?: string;
+  notes?: string;
+};
+
+export type BusinessCardDetails = {
+  nameKanji: string;
+  nameRomaji?: string;
+  nameKana?: string;
+  position?: string;
+  storeVariants: string[];
+  phoneOverride?: string;
+  email?: string;
+  lineQr: boolean;
+  lineQrNote?: string;
+  notes?: string;
+};
+
+export type AwardRecipient = {
+  awardType: string;
+  rank?: string;
+  name: string;
+};
+
+export type AwardDetails = {
+  ceremonyDate: string;
+  printMaterials: string[];
+  recipients: AwardRecipient[];
+  notes?: string;
+};
+
+export type OtherDetails = {
+  sizes?: string[];
+  printCount?: number;
+  notes?: string;
+};
+
+export type DeliverableDetails =
+  | PosterPopDetails
+  | BusinessCardDetails
+  | AwardDetails
+  | OtherDetails;
+
+export type StatusHistoryEntry = {
+  from: string;
+  to: string;
+  by: string;
+  at: string; // ISO8601
+  note?: string;
+};
+
+export type Deliverable = {
+  id: string;
+  category: DeliverableCategory;
+  status: DeliverableStatus;
+  assigneeOverride?: string | null;
+  dueDateOverride?: string | null;
+  details: DeliverableDetails;
+  statusHistory: StatusHistoryEntry[];
+  completedAt?: string | null;
+};
+
+export type Attachment = {
+  name: string;
+  storagePath: string;
+  downloadUrl: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string; // ISO8601
+};
+
+// Supabase 行そのまま (snake_case)
+export type RequestRow = {
+  id: string;
+  store_id: number | null;
+  requester_name: string;
+  title: string;
+  content: string;
+  usage_period: string | null;
+  due_date: string | null;
+  reference_urls: string[];
+  attachments: Attachment[];
+  deliverables: Deliverable[];
+  status: RequestStatus;
+  assignee_id: string | null;
+  priority: RequestPriority;
+  public_token: string;
+  completed_at: string | null;
+  legacy_id: string | null;
+  created_at: string;
+  updated_at: string;
+  // join
+  stores?: Store | null;
+  profiles?: Profile | null;
+};
+
+export type DeliverableTemplate = {
+  category: DeliverableCategory;
+  details: Record<string, unknown>;
+};
+
+export type Preset = {
+  id: string;
+  name: string;
+  description: string;
+  ord: number;
+  active: boolean;
+  deliverable_templates: DeliverableTemplate[];
+};
+
+export const CATEGORY_LABELS: Record<DeliverableCategory, string> = {
+  poster: 'ポスター',
+  pop: '卓上POP',
+  businessCard: '名刺',
+  award: '賞状・表彰状',
+  other: 'その他',
+};
+
+export const DELIVERABLE_STATUS_LABELS: Record<DeliverableStatus, string> = {
+  pending: '未着手',
+  inProgress: '進行中',
+  reviewing: '確認中',
+  completed: '完了',
+  cancelled: 'キャンセル',
+};
+
+export const REQUEST_STATUS_LABELS: Record<RequestStatus, string> = {
+  pending: '未着手',
+  inProgress: '進行中',
+  completed: '完了',
+  cancelled: 'キャンセル',
+};
+
+export const DELIVERABLE_STATUS_COLORS: Record<DeliverableStatus, string> = {
+  pending: 'bg-gray-100 text-gray-700 border-gray-200',
+  inProgress: 'bg-sky-100 text-sky-800 border-sky-200',
+  reviewing: 'bg-amber-100 text-amber-800 border-amber-200',
+  completed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  cancelled: 'bg-gray-200 text-gray-500 border-gray-300 line-through',
+};
+
+export const CATEGORY_COLORS: Record<DeliverableCategory, string> = {
+  poster: 'bg-sky-50 text-sky-700 border-sky-200',
+  pop: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  businessCard: 'bg-violet-50 text-violet-700 border-violet-200',
+  award: 'bg-amber-50 text-amber-700 border-amber-200',
+  other: 'bg-gray-50 text-gray-700 border-gray-200',
 };
