@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { Task, Profile, Store, TaskStatus, TaskPriority } from '@/lib/types';
+import type { Task, Profile, Store, TaskStatus } from '@/lib/types';
 import { TASK_STATUSES, STATUS_COLORS } from '@/lib/types';
 import TaskModal from '@/components/TaskModal';
 import * as XLSX from 'xlsx';
@@ -35,7 +35,6 @@ export default function TaskPanel() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterAssignee, setFilterAssignee] = useState<string>('all');
-  const [filterPriority, setFilterPriority] = useState<'all' | 'fushi'>('all');
 
   // Sort
   const [sortKey, setSortKey] = useState<SortKey>('created');
@@ -80,7 +79,6 @@ export default function TaskPanel() {
     data: {
       title: string;
       status: TaskStatus;
-      priority: TaskPriority;
       assignee_id: string;
       store_id: string;
       due_date: string;
@@ -91,7 +89,6 @@ export default function TaskPanel() {
     const payload = {
       title: data.title,
       status: data.status,
-      priority: data.priority,
       assignee_id: data.assignee_id || null,
       store_id: data.store_id ? parseInt(data.store_id) : null,
       due_date: data.due_date || null,
@@ -133,7 +130,6 @@ export default function TaskPanel() {
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterStatus !== 'all' && t.status !== filterStatus) return false;
     if (filterAssignee !== 'all' && t.assignee_id !== filterAssignee) return false;
-    if (filterPriority === 'fushi' && t.priority !== '不死！') return false;
     return true;
   });
 
@@ -307,18 +303,6 @@ export default function TaskPanel() {
             ))}
           </select>
         </div>
-        <button
-          type="button"
-          onClick={() => setFilterPriority((p) => (p === 'fushi' ? 'all' : 'fushi'))}
-          className={`w-full rounded-lg border px-2 py-1 text-[11px] font-medium transition ${
-            filterPriority === 'fushi'
-              ? 'border-red-600 bg-red-600 text-white'
-              : 'border-gray-200 bg-white text-gray-500 hover:bg-red-50 hover:text-red-700'
-          }`}
-          title="不死！タスクのみに絞る"
-        >
-          🔥 不死！のみ
-        </button>
       </div>
 
       {/* Sort buttons */}
@@ -349,11 +333,6 @@ export default function TaskPanel() {
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${STATUS_COLORS[task.status]}`}>
                   {task.status}
                 </span>
-                {task.priority === '不死！' && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-red-600 text-white">
-                    🔥 不死！
-                  </span>
-                )}
                 {task.profiles && (
                   <span
                     className="text-[10px] px-1.5 py-0.5 rounded-full font-medium text-white"

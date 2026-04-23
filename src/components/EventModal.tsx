@@ -1,16 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { CalendarEvent, EventPriority, Profile, Store } from '@/lib/types';
-
-const EVENT_PRIORITIES: EventPriority[] = ['通常', '不死！', '蘭○', '他'];
+import type { CalendarEvent, Profile, Store } from '@/lib/types';
 
 type EventFormData = {
   title: string;
   event_date: string;
   start_time: string;
   end_time: string;
-  priority: EventPriority;
   assignee_id: string;
   store_id: string;
   notes: string;
@@ -32,7 +29,6 @@ export default function EventModal({ event, defaultDate, profiles, stores, onSav
     event_date: defaultDate || '',
     start_time: '',
     end_time: '',
-    priority: '通常',
     assignee_id: '',
     store_id: '',
     notes: '',
@@ -46,7 +42,6 @@ export default function EventModal({ event, defaultDate, profiles, stores, onSav
         event_date: event.event_date,
         start_time: event.start_time || '',
         end_time: event.end_time || '',
-        priority: event.priority ?? '通常',
         assignee_id: event.assignee_id || '',
         store_id: event.store_id?.toString() || '',
         notes: event.notes || '',
@@ -120,19 +115,6 @@ export default function EventModal({ event, defaultDate, profiles, stores, onSav
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">優先度</label>
-            <select
-              value={form.priority}
-              onChange={(e) => setForm({ ...form, priority: e.target.value as EventPriority })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900"
-            >
-              {EVENT_PRIORITIES.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

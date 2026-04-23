@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import type { CalendarEvent, EventPriority, Profile, RequestRow, Store } from '@/lib/types';
+import type { CalendarEvent, Profile, RequestRow, Store } from '@/lib/types';
 import EventModal from '@/components/EventModal';
 
 const WEEKDAY_LABELS = ['月', '火', '水', '木', '金', '土', '日'];
@@ -96,7 +96,6 @@ export default function CalendarPage() {
       event_date: string;
       start_time: string;
       end_time: string;
-      priority: EventPriority;
       assignee_id: string;
       store_id: string;
       notes: string;
@@ -108,7 +107,6 @@ export default function CalendarPage() {
       event_date: data.event_date,
       start_time: data.start_time || null,
       end_time: data.end_time || null,
-      priority: data.priority,
       assignee_id: data.assignee_id || null,
       store_id: data.store_id ? parseInt(data.store_id) : null,
       notes: data.notes || null,
@@ -268,16 +266,13 @@ export default function CalendarPage() {
                   {dayEvents.map((evt) => {
                     const timeStr = formatTime(evt.start_time);
                     const assigneeColor = evt.profiles?.color || '#9ca3af';
-                    const isFushi = evt.priority === '不死！';
                     return (
                       <div
                         key={evt.id}
-                        className={`text-[10px] sm:text-xs px-1 py-0.5 rounded border-l-[3px] cursor-pointer hover:brightness-95 transition-all ${
-                          isFushi ? 'ring-1 ring-red-500' : ''
-                        }`}
+                        className="text-[10px] sm:text-xs px-1 py-0.5 rounded border-l-[3px] cursor-pointer hover:brightness-95 transition-all"
                         style={{
-                          backgroundColor: isFushi ? '#fee2e2' : assigneeColor + '18',
-                          borderColor: isFushi ? '#dc2626' : assigneeColor,
+                          backgroundColor: assigneeColor + '18',
+                          borderColor: assigneeColor,
                           borderTopWidth: '1px',
                           borderRightWidth: '1px',
                           borderBottomWidth: '1px',
@@ -292,20 +287,6 @@ export default function CalendarPage() {
                           setModalOpen(true);
                         }}
                       >
-                        {/* 優先度 */}
-                        {evt.priority && evt.priority !== '通常' && (
-                          <span
-                            className={`inline-block px-1 py-0 rounded text-[9px] font-bold mr-0.5 ${
-                              isFushi
-                                ? 'bg-red-600 text-white'
-                                : evt.priority === '蘭○'
-                                  ? 'bg-purple-600 text-white'
-                                  : 'bg-gray-500 text-white'
-                            }`}
-                          >
-                            {evt.priority}
-                          </span>
-                        )}
                         {/* 担当者 */}
                         {evt.profiles && (
                           <span
