@@ -139,6 +139,8 @@ export default function NewRequestForm({ stores, presets }: Props) {
       }
 
       const supabase = createClient();
+      // ログイン中ならその user の id を記録 → /my で自分の依頼として見える
+      const { data: userData } = await supabase.auth.getUser();
       const { id } = await insertRequest(supabase, {
         storeId,
         requesterName,
@@ -150,6 +152,7 @@ export default function NewRequestForm({ stores, presets }: Props) {
         attachments,
         deliverables,
         publicToken,
+        userId: userData.user?.id ?? null,
       });
       addStoredToken(publicToken);
       router.push(`/request/${id}?token=${publicToken}&submitted=1`);

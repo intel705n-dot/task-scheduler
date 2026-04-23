@@ -9,8 +9,8 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'タスク・スケジュール管理',
-  description: 'タスク管理とスケジュール表のWebアプリ',
+  title: 'TSUKURU',
+  description: 'レジャラース 制作依頼・タスク管理',
 };
 
 export default function RootLayout({

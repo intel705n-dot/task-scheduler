@@ -117,7 +117,11 @@ export default function Header({ mobileView, onMobileViewChange }: Props) {
                   <button
                     onClick={() => setAdminMenuOpen((v) => !v)}
                     className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                      pathname?.startsWith('/presets') || pathname?.startsWith('/stores') || pathname?.startsWith('/import') || pathname?.startsWith('/requests')
+                      pathname?.startsWith('/presets') ||
+                      pathname?.startsWith('/stores') ||
+                      pathname?.startsWith('/store-accounts') ||
+                      pathname?.startsWith('/import') ||
+                      pathname?.startsWith('/requests')
                         ? 'bg-indigo-50 text-indigo-700'
                         : 'text-gray-600 hover:bg-gray-100'
                     }`}
@@ -134,6 +138,9 @@ export default function Header({ mobileView, onMobileViewChange }: Props) {
                       </AdminMenuLink>
                       <AdminMenuLink href="/stores" onClick={() => setAdminMenuOpen(false)}>
                         店舗マスタ
+                      </AdminMenuLink>
+                      <AdminMenuLink href="/store-accounts" onClick={() => setAdminMenuOpen(false)}>
+                        店舗アカウント
                       </AdminMenuLink>
                       <AdminMenuLink href="/import" onClick={() => setAdminMenuOpen(false)}>
                         データ移行

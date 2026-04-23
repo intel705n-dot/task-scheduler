@@ -25,6 +25,7 @@ export type NewRequestInput = {
   attachments: Attachment[];
   deliverables: Deliverable[];
   publicToken: string;
+  userId?: string | null;
 };
 
 export async function insertRequest(
@@ -52,6 +53,7 @@ export async function insertRequest(
       status: 'pending',
       priority: 'normal',
       public_token: input.publicToken,
+      user_id: input.userId ?? null,
     })
     .select('id')
     .single();
