@@ -132,21 +132,21 @@ export default function RequestKanbanClient() {
           </div>
         </div>
 
-        {/* 9カラムを横スクロールで並べる (各240px) */}
-        <div className="overflow-x-auto pb-2">
-          <div className="flex min-w-max gap-2">
-            {DELIVERABLE_STATUS_ORDER.map((col) => {
-              const items = filtered.filter((r) => r.status === col);
-              return (
-                <KanbanColumn
-                  key={col}
-                  col={col}
-                  items={items}
-                  className={COLUMN_STYLES[col]}
-                />
-              );
-            })}
-          </div>
+        {/* 9カラムを 2/3/5 列のグリッドで並べる。
+            モバイル2列×5段 / タブレット3列×3段 / 広いPC5列×2段。
+            各カラム内は縦スクロール。 */}
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 2xl:grid-cols-5">
+          {DELIVERABLE_STATUS_ORDER.map((col) => {
+            const items = filtered.filter((r) => r.status === col);
+            return (
+              <KanbanColumn
+                key={col}
+                col={col}
+                items={items}
+                className={COLUMN_STYLES[col]}
+              />
+            );
+          })}
         </div>
       </div>
 
@@ -174,7 +174,7 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`w-60 flex-shrink-0 rounded-lg border p-2 transition ${className} ${
+      className={`flex min-h-[180px] flex-col rounded-lg border p-2 transition ${className} ${
         isOver ? 'ring-2 ring-indigo-500' : ''
       }`}
     >
@@ -184,7 +184,8 @@ function KanbanColumn({
         </h3>
         <span className="text-xs text-gray-500">{items.length}</span>
       </div>
-      <div className="space-y-2">
+      {/* カード数が増えたらカラム内を縦スクロール */}
+      <div className="flex-1 space-y-2 overflow-y-auto max-h-[420px] pr-0.5">
         {items.length === 0 && (
           <div className="rounded-md border border-dashed border-gray-300 bg-white/60 p-4 text-center text-xs text-gray-400">
             なし
