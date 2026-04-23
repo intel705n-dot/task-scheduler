@@ -3,17 +3,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import type { RequestRow, RequestStatus } from '@/lib/types';
-import { CATEGORY_COLORS, CATEGORY_LABELS, DELIVERABLE_STATUS_COLORS, DELIVERABLE_STATUS_LABELS, REQUEST_STATUS_LABELS } from '@/lib/types';
+import type { RequestRow } from '@/lib/types';
+import {
+  CATEGORY_COLORS,
+  CATEGORY_LABELS,
+  DELIVERABLE_STATUS_COLORS,
+  DELIVERABLE_STATUS_LABELS,
+  REQUEST_STATUS_LABELS,
+} from '@/lib/types';
 import { fetchAllRequests } from '@/lib/requests';
 import { fmtDate, fmtDateFull } from '@/lib/request-utils';
 
-const STATUS_BADGE: Record<RequestStatus, string> = {
-  pending: 'bg-gray-100 text-gray-700 border-gray-200',
-  inProgress: 'bg-sky-100 text-sky-800 border-sky-200',
-  completed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  cancelled: 'bg-gray-200 text-gray-500 border-gray-300',
-};
+const STATUS_BADGE = DELIVERABLE_STATUS_COLORS;
 
 export default function RequestPanel() {
   const supabase = createClient();

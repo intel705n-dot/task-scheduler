@@ -39,7 +39,10 @@ export async function commitMigration(
         : completedAt
           ? 'completed'
           : row.mapped.deliverables.some(
-                (d) => d.status === 'inProgress' || d.status === 'reviewing',
+                (d) =>
+                  d.status !== 'pending' &&
+                  d.status !== 'completed' &&
+                  d.status !== 'cancelled',
               )
             ? 'inProgress'
             : 'pending';

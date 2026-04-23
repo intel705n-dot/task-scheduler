@@ -76,9 +76,14 @@ function normalizeStatus(v: string): DeliverableStatus {
   const s = v.trim().toLowerCase();
   if (!s) return 'pending';
   if (s.includes('完了') || s === 'done' || s === 'completed' || s === '済') return 'completed';
-  if (s.includes('確認')) return 'reviewing';
+  if (s.includes('確認')) return 'waitingReview';
+  if (s.includes('仕上がり待ち')) return 'waitingFinish';
+  if (s.includes('保留')) return 'onHold';
+  if (s.includes('返答待ち')) return 'waitingReply';
+  if (s.includes('データ待ち')) return 'waitingData';
   if (s.includes('進行') || s.includes('作業') || s === 'in progress') return 'inProgress';
-  if (s.includes('キャンセル') || s === 'cancelled' || s === '中止') return 'cancelled';
+  if (s.includes('キャンセル') || s === 'cancelled' || s === '中止' || s === '取消')
+    return 'cancelled';
   return 'pending';
 }
 

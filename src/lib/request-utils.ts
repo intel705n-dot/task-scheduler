@@ -117,7 +117,7 @@ export function aggregateStatus(deliverables: Deliverable[]): {
     return { status: 'completed', completedAt: latest ?? new Date().toISOString() };
   }
   const anyInProgress = active.some(
-    (d) => d.status === 'inProgress' || d.status === 'reviewing',
+    (d) => d.status !== 'pending' && d.status !== 'completed' && d.status !== 'cancelled',
   );
   if (anyInProgress) return { status: 'inProgress', completedAt: null };
   return { status: 'pending', completedAt: null };
@@ -162,17 +162,10 @@ export function fmtDateTime(s?: string | null): string {
   return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
 
+// 旧API(5値前提)は types.ts の DELIVERABLE_STATUS_COLORS に統合済み。
+// 呼び出し側は import { DELIVERABLE_STATUS_COLORS } from '@/lib/types' に
+// 切り替え済みなので、ここでは互換用に薄いラッパだけ残す。
+import { DELIVERABLE_STATUS_COLORS } from './types';
 export function statusBadgeColor(status: DeliverableStatus): string {
-  switch (status) {
-    case 'pending':
-      return 'bg-gray-100 text-gray-700 border-gray-200';
-    case 'inProgress':
-      return 'bg-sky-100 text-sky-800 border-sky-200';
-    case 'reviewing':
-      return 'bg-amber-100 text-amber-800 border-amber-200';
-    case 'completed':
-      return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-    case 'cancelled':
-      return 'bg-gray-200 text-gray-500 border-gray-300 line-through';
-  }
+  return DELIVERABLE_STATUS_COLORS[status] ?? 'bg-gray-100 text-gray-700 border-gray-200';
 }

@@ -36,8 +36,12 @@ import DeliverableCard from '@/components/deliverables/DeliverableCard';
 
 const STATUS_TRANSITIONS: { to: DeliverableStatus; label: string; tone: string }[] = [
   { to: 'pending', label: '未着手', tone: 'text-gray-600' },
-  { to: 'inProgress', label: '着手', tone: 'text-sky-700' },
-  { to: 'reviewing', label: '確認中', tone: 'text-amber-700' },
+  { to: 'inProgress', label: '作業中', tone: 'text-orange-700' },
+  { to: 'waitingFinish', label: '仕上がり待ち', tone: 'text-pink-700' },
+  { to: 'onHold', label: '保留', tone: 'text-blue-700' },
+  { to: 'waitingReply', label: '返答待ち', tone: 'text-yellow-700' },
+  { to: 'waitingData', label: 'データ待ち', tone: 'text-purple-700' },
+  { to: 'waitingReview', label: '確認待ち', tone: 'text-teal-700' },
   { to: 'completed', label: '完了', tone: 'text-emerald-700' },
   { to: 'cancelled', label: '取消', tone: 'text-gray-500' },
 ];
