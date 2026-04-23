@@ -38,6 +38,28 @@ export default function RequestPanel() {
     refresh();
   }, [refresh]);
 
+  // 同じブラウザ内の他パネルからの変更通知を受けて再描画
+  useEffect(() => {
+    const handler = () => refresh();
+    window.addEventListener('tsukuru:tasks-changed', handler);
+    return () => window.removeEventListener('tsukuru:tasks-changed', handler);
+  }, [refresh]);
+
+  // 他ブラウザ等からの変更も Supabase Realtime で拾う
+  useEffect(() => {
+    const channel = supabase
+      .channel('requests-panel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'requests' },
+        () => refresh(),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, refresh]);
+
   const filtered = useMemo(() => {
     const kw = search.trim().toLowerCase();
     return requests.filter((r) => {

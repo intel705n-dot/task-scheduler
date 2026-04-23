@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { Task, Profile, Store, TaskStatus } from '@/lib/types';
 import { TASK_STATUSES, STATUS_COLORS } from '@/lib/types';
 import TaskModal from '@/components/TaskModal';
+import { ClipboardList, ImageIcon, Paperclip } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 type SortKey = 'created' | 'status' | 'assignee' | 'store' | 'due_date' | 'title';
@@ -62,6 +63,35 @@ export default function TaskPanel() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // 同じブラウザ内で依頼カンバン等が変更した時に自分も再描画する。
+  // (Supabase Realtime は publication 未設定だと飛ばないので、
+  //  client side でのイベントバスを併用。)
+  useEffect(() => {
+    const handler = () => fetchData();
+    window.addEventListener('tsukuru:tasks-changed', handler);
+    return () => window.removeEventListener('tsukuru:tasks-changed', handler);
+  }, [fetchData]);
+
+  // Supabase Realtime: 他のブラウザや外部からの変更も拾う
+  useEffect(() => {
+    const channel = supabase
+      .channel('tasks-panel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks' },
+        () => fetchData(),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'requests' },
+        () => fetchData(),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, fetchData]);
 
   const handleToggleDone = async (task: Task) => {
     const newDone = !task.is_done;
@@ -399,18 +429,24 @@ export default function TaskPanel() {
                 className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap gap-1 mb-0.5">
+                <div className="flex flex-wrap items-center gap-1 mb-0.5">
                   {isRequest && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-red-600 text-white">
-                      📄 依頼
+                    <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-red-600 text-white">
+                      <ClipboardList className="h-3 w-3" />
+                      依頼
                     </span>
                   )}
                   {attachmentCount > 0 && (
                     <span
-                      className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-violet-600 text-white"
+                      className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-violet-600 text-white"
                       title={`添付 ${attachmentCount} 件${imageCount > 0 ? ` (画像 ${imageCount})` : ''}`}
                     >
-                      {imageCount > 0 ? '🖼️' : '📎'} {attachmentCount}
+                      {imageCount > 0 ? (
+                        <ImageIcon className="h-3 w-3" />
+                      ) : (
+                        <Paperclip className="h-3 w-3" />
+                      )}
+                      {attachmentCount}
                     </span>
                   )}
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${STATUS_COLORS[task.status]}`}>

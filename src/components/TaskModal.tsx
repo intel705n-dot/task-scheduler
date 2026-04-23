@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { ClipboardList } from 'lucide-react';
 import type { Task, TaskStatus, Profile, Store } from '@/lib/types';
 import { TASK_STATUSES } from '@/lib/types';
 
@@ -76,8 +77,9 @@ export default function TaskModal({ task, profiles, stores, onSave, onDelete, on
           <div className="border-b border-amber-200 bg-amber-50 p-4">
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2 text-sm">
-                <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                  📄 依頼
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                  <ClipboardList className="h-3 w-3" />
+                  依頼
                 </span>
                 <span
                   className="truncate font-semibold text-gray-900"

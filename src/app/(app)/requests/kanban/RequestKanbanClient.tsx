@@ -13,6 +13,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
+import { ImageIcon, Paperclip } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
   CATEGORY_COLORS,
@@ -94,6 +95,8 @@ export default function RequestKanbanClient() {
     );
     try {
       await patchRequest(supabase, requestId, { status: targetCol as RequestStatus });
+      // DBトリガーで tasks も更新されるので、同ブラウザ上の他パネルに通知
+      window.dispatchEvent(new CustomEvent('tsukuru:tasks-changed'));
     } catch (err) {
       console.error(err);
       refresh();
@@ -229,10 +232,14 @@ function KanbanCard({ r, dragging = false }: { r: RequestRow; dragging?: boolean
         </span>
         {attachments.length > 0 && (
           <span
-            className="inline-flex items-center rounded-full bg-violet-600 px-1.5 py-0 text-[10px] font-bold text-white"
+            className="inline-flex items-center gap-0.5 rounded-full bg-violet-600 px-1.5 py-0 text-[10px] font-bold text-white"
             title={`添付${attachments.length}件${imageCount > 0 ? ` (画像${imageCount})` : ''}`}
           >
-            {imageCount > 0 ? '🖼️' : '📎'}
+            {imageCount > 0 ? (
+              <ImageIcon className="h-3 w-3" />
+            ) : (
+              <Paperclip className="h-3 w-3" />
+            )}
             {attachments.length}
           </span>
         )}
