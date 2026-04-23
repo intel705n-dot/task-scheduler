@@ -37,6 +37,12 @@ export type Task = {
   // joined
   profiles?: Profile | null;
   stores?: Store | null;
+  // 依頼由来タスクは対応する request レコードを join して attachments を引ける
+  linked_request?: {
+    id: string;
+    title: string;
+    attachments: Attachment[];
+  } | null;
 };
 
 export type CalendarEvent = {

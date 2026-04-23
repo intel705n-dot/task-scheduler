@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import type { Task, TaskStatus, Profile, Store } from '@/lib/types';
 import { TASK_STATUSES } from '@/lib/types';
 
@@ -69,6 +70,74 @@ export default function TaskModal({ task, profiles, stores, onSave, onDelete, on
             </svg>
           </button>
         </div>
+
+        {/* 依頼由来タスクの場合: リンク + 添付プレビュー */}
+        {task?.linked_request && (
+          <div className="border-b border-amber-200 bg-amber-50 p-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2 text-sm">
+                <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                  📄 依頼
+                </span>
+                <span
+                  className="truncate font-semibold text-gray-900"
+                  title={task.linked_request.title}
+                >
+                  {task.linked_request.title}
+                </span>
+              </div>
+              <Link
+                href={`/requests/${task.linked_request.id}`}
+                className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700"
+                onClick={onClose}
+              >
+                依頼詳細 →
+              </Link>
+            </div>
+            {(task.linked_request.attachments ?? []).length > 0 ? (
+              <div>
+                <div className="mb-1.5 text-xs font-medium text-gray-600">
+                  添付 ({task.linked_request.attachments.length}件) — 画像はクリックで拡大
+                </div>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {task.linked_request.attachments.map((a, i) => {
+                    const isImage = (a.mimeType || '').startsWith('image/');
+                    const previewUrl = a.downloadUrl.replace(/([?&])dl=1/, '$1dl=0');
+                    return (
+                      <a
+                        key={i}
+                        href={previewUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block overflow-hidden rounded-md border border-gray-200 bg-white transition hover:border-indigo-400 hover:shadow"
+                        title={a.name}
+                      >
+                        {isImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={previewUrl}
+                            alt={a.name}
+                            className="h-16 w-full object-cover sm:h-20"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-16 w-full items-center justify-center text-[10px] text-gray-400 sm:h-20">
+                            {a.mimeType || 'ファイル'}
+                          </div>
+                        )}
+                        <div className="truncate border-t border-gray-100 px-1 py-0.5 text-[10px] text-gray-600">
+                          {a.name}
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="text-xs text-gray-500">添付ファイルはありません</div>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>

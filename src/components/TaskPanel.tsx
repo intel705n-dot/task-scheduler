@@ -48,7 +48,7 @@ export default function TaskPanel() {
     const [tasksRes, profilesRes, storesRes] = await Promise.all([
       supabase
         .from('tasks')
-        .select('*, profiles(*), stores(*)')
+        .select('*, profiles(*), stores(*), linked_request:requests!linked_request_id(id,title,attachments)')
         .order('created_at', { ascending: false }),
       supabase.from('profiles').select('*'),
       supabase.from('stores').select('*').order('ord').order('id'),
@@ -374,6 +374,11 @@ export default function TaskPanel() {
         {sorted.map((task) => {
           const isRequest = Boolean(task.linked_request_id);
           const isUnassignedRequest = isRequest && !task.assignee_id;
+          const attachments = task.linked_request?.attachments ?? [];
+          const imageCount = attachments.filter((a) =>
+            (a.mimeType || '').startsWith('image/'),
+          ).length;
+          const attachmentCount = attachments.length;
           return (
             <div
               key={task.id}
@@ -398,6 +403,14 @@ export default function TaskPanel() {
                   {isRequest && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-red-600 text-white">
                       📄 依頼
+                    </span>
+                  )}
+                  {attachmentCount > 0 && (
+                    <span
+                      className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-violet-600 text-white"
+                      title={`添付 ${attachmentCount} 件${imageCount > 0 ? ` (画像 ${imageCount})` : ''}`}
+                    >
+                      {imageCount > 0 ? '🖼️' : '📎'} {attachmentCount}
                     </span>
                   )}
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${STATUS_COLORS[task.status]}`}>
