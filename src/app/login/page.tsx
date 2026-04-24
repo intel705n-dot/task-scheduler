@@ -1,8 +1,22 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+
+// LINE / Facebook / Instagram などアプリ内ブラウザでは Google OAuth が
+// disallowed_useragent でブロックされる。UA から検出して案内を出す。
+function detectInAppBrowser(ua: string): string | null {
+  if (/Line\//i.test(ua)) return 'LINE';
+  if (/FBAN|FBAV|FB_IAB/i.test(ua)) return 'Facebook';
+  if (/Instagram/i.test(ua)) return 'Instagram';
+  if (/Twitter/i.test(ua)) return 'X (旧 Twitter)';
+  if (/KAKAOTALK/i.test(ua)) return 'KakaoTalk';
+  if (/BytedanceWebview|TikTok/i.test(ua)) return 'TikTok';
+  // Android 汎用 WebView (; wv が UA に含まれる)
+  if (/Android.*;\s*wv\)/.test(ua)) return 'アプリ内ブラウザ';
+  return null;
+}
 
 function LoginInner() {
   const [email, setEmail] = useState('');
@@ -10,12 +24,30 @@ function LoginInner() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
+  const [inAppBrowser, setInAppBrowser] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const supabase = createClient();
   const searchParams = useSearchParams();
   const nextParam = searchParams.get('next');
   // next パラメータは同一サイト内 (/から始まる) のみ許可してオープンリダイレクトを防ぐ
   const nextPath = nextParam && nextParam.startsWith('/') ? nextParam : null;
+
+  useEffect(() => {
+    setInAppBrowser(detectInAppBrowser(navigator.userAgent));
+  }, []);
+
+  const copyUrl = async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback: prompt
+      window.prompt('URLをコピーしてください:', url);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,14 +143,42 @@ function LoginInner() {
           </p>
         </div>
 
+        {inAppBrowser && (
+          <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="mb-2 flex items-start gap-2">
+              <svg className="mt-0.5 h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+              </svg>
+              <p className="font-semibold">
+                {inAppBrowser} アプリ内ブラウザでは Google ログインができません
+              </p>
+            </div>
+            <p className="mb-3 text-xs text-amber-800">
+              Google のセキュリティポリシー (disallowed_useragent) により、
+              {inAppBrowser} のアプリ内ブラウザからは個人 Google ログインをブロックされます。
+              下のボタンで URL をコピーして、Safari / Chrome などの通常のブラウザに貼り付けてアクセスしてください。
+            </p>
+            <button
+              type="button"
+              onClick={copyUrl}
+              className="w-full rounded-md bg-amber-600 px-3 py-2 text-xs font-medium text-white hover:bg-amber-700"
+            >
+              {copied ? 'コピーしました ✓' : 'このページのURLをコピー'}
+            </button>
+            <p className="mt-2 text-[11px] text-amber-800">
+              店舗ログイン (メール + パスワード) はこのまま使えます。
+            </p>
+          </div>
+        )}
+
         {/* 個人ログイン (Google) */}
         <section className="mb-6">
           <h2 className="mb-2 text-xs font-semibold text-gray-700">個人ログイン</h2>
           <button
             type="button"
             onClick={handleGoogle}
-            disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            disabled={googleLoading || Boolean(inAppBrowser)}
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
