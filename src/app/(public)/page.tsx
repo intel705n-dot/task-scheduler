@@ -14,8 +14,8 @@ export default async function LandingPage() {
   const loginCtaHref = isAuthed ? '/select' : '/login?next=/select';
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10 sm:py-20">
-      <section className="mb-10 text-center sm:mb-14">
+    <main className="mx-auto max-w-xl px-4 py-10 sm:py-20">
+      <section className="mb-8 text-center sm:mb-12">
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
           制作依頼フォーム
         </h1>
@@ -24,51 +24,33 @@ export default async function LandingPage() {
         </p>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Link
-          href={loginCtaHref}
-          className="group flex h-full flex-col justify-between rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-indigo-600 hover:shadow-md sm:p-7"
-        >
-          <div>
-            <div className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-medium text-indigo-700">
-              おすすめ
-            </div>
-            <h2 className="mt-3 text-lg font-bold sm:text-xl">
-              ログインして依頼
-            </h2>
-            <p className="mt-2 text-xs text-gray-600 sm:text-sm">
-              依頼状況を常に確認できます。
-              <br />
-              過去の依頼や進行中の依頼を一覧で管理。
-            </p>
-          </div>
-          <div className="mt-6 flex items-center justify-end gap-1 text-sm font-medium text-indigo-700 transition group-hover:translate-x-0.5">
-            <span>進む</span>
-            <span>→</span>
-          </div>
-        </Link>
+      {/* メイン CTA: ログインして依頼 */}
+      <Link
+        href={loginCtaHref}
+        className="group block rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-indigo-600 hover:shadow-md sm:p-7"
+      >
+        <div className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-medium text-indigo-700">
+          おすすめ
+        </div>
+        <h2 className="mt-3 text-lg font-bold sm:text-xl">
+          ログインして依頼
+        </h2>
+        <p className="mt-2 text-xs text-gray-600 sm:text-sm">
+          依頼状況を常に確認できます。過去の依頼や進行中の依頼を一覧で管理。
+        </p>
+        <div className="mt-5 flex items-center justify-end gap-1 text-sm font-medium text-indigo-700 transition group-hover:translate-x-0.5">
+          <span>進む</span>
+          <span>→</span>
+        </div>
+      </Link>
 
+      {/* サブ CTA: ログインせずに依頼 (小さく目立たなく) */}
+      <div className="mt-6 text-center">
         <Link
           href="/select"
-          className="group flex h-full flex-col justify-between rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-gray-900 hover:shadow-md sm:p-7"
+          className="text-xs text-gray-500 underline-offset-4 hover:text-gray-700 hover:underline"
         >
-          <div>
-            <div className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-700">
-              ゲスト
-            </div>
-            <h2 className="mt-3 text-lg font-bold sm:text-xl">
-              ログインせずに依頼
-            </h2>
-            <p className="mt-2 text-xs text-gray-600 sm:text-sm">
-              メールアドレスだけで依頼を送信。
-              <br />
-              後で依頼状況を確認したい場合は専用URLが必要です。
-            </p>
-          </div>
-          <div className="mt-6 flex items-center justify-end gap-1 text-sm font-medium text-gray-700 transition group-hover:translate-x-0.5">
-            <span>進む</span>
-            <span>→</span>
-          </div>
+          ログインせずに依頼する (単発のみ / 依頼状況の確認は不可)
         </Link>
       </div>
     </main>
