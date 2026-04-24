@@ -1,5 +1,6 @@
-import RequestKanbanClient from './RequestKanbanClient';
+import { redirect } from 'next/navigation';
 
-export default function RequestsKanbanPage() {
-  return <RequestKanbanClient />;
+// 旧 /requests/kanban は /progress (進捗管理) に統合
+export default function RequestKanbanRedirect() {
+  redirect('/progress');
 }
