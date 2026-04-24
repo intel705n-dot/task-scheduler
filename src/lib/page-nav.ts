@@ -10,20 +10,21 @@ export type PageNavItem = {
 
 export const PAGE_NAV: PageNavItem[] = [
   {
-    href: '/progress',
-    label: '進捗',
-    matcher: (p) =>
-      Boolean(p && (p.startsWith('/progress') || p.startsWith('/requests'))),
-  },
-  {
     href: '/presets',
     label: 'プリセット',
     matcher: (p) => Boolean(p && p.startsWith('/presets')),
   },
   {
-    href: '/stores',
-    label: '店舗マスタ',
-    matcher: (p) => Boolean(p && p.startsWith('/stores')),
+    href: '/accounts',
+    label: 'アカウント',
+    matcher: (p) =>
+      Boolean(p && (p.startsWith('/accounts') || p.startsWith('/store-accounts'))),
+  },
+  {
+    href: '/progress',
+    label: '進捗',
+    matcher: (p) =>
+      Boolean(p && (p.startsWith('/progress') || p.startsWith('/requests'))),
   },
   {
     href: '/calendar',
@@ -31,10 +32,9 @@ export const PAGE_NAV: PageNavItem[] = [
     matcher: (p) => Boolean(p && p.startsWith('/calendar')),
   },
   {
-    href: '/accounts',
-    label: 'アカウント',
-    matcher: (p) =>
-      Boolean(p && (p.startsWith('/accounts') || p.startsWith('/store-accounts'))),
+    href: '/stores',
+    label: '店舗マスタ',
+    matcher: (p) => Boolean(p && p.startsWith('/stores')),
   },
   {
     href: '/import',

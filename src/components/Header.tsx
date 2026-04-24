@@ -91,24 +91,25 @@ export default function Header({ mobileView, onMobileViewChange }: Props) {
               </button>
             </nav>
 
-            {/* Desktop title + nav */}
-            <div className="hidden lg:flex items-center gap-5">
+            {/* Desktop: TSUKURU ロゴのみ左端 */}
+            <div className="hidden lg:flex items-center">
               <Link href="/calendar" className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
                 <span className="font-bold text-gray-900">TSUKURU</span>
               </Link>
-              <nav className="flex items-center gap-0.5">
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Desktop nav: 右揃え */}
+              <nav className="hidden lg:flex items-center gap-0.5 mr-3">
                 {PAGE_NAV.map((p) => (
                   <NavLink key={p.href} href={p.href} current={pathname}>
                     {p.label}
                   </NavLink>
                 ))}
               </nav>
-            </div>
-
-            <div className="flex items-center gap-3">
               {profile && (
                 <span
                   className="text-sm font-medium px-2 py-1 rounded"
