@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import LeftPanel from '@/components/LeftPanel';
 import ShortcutPanel from '@/components/ShortcutPanel';
+import PageSwitchArrows from '@/components/PageSwitchArrows';
 
 export default function AppLayout({
   children,
@@ -41,6 +42,7 @@ export default function AppLayout({
           <div className="max-w-5xl mx-auto">{children}</div>
         </main>
       </div>
+      <PageSwitchArrows />
     </>
   );
 }

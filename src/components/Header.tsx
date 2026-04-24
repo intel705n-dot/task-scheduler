@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Profile } from '@/lib/types';
+import { PAGE_NAV } from '@/lib/page-nav';
 
 type Props = {
   mobileView: 'tasks' | 'calendar';
@@ -21,19 +22,6 @@ export default function Header({ mobileView, onMobileViewChange }: Props) {
   const [newPassword, setNewPassword] = useState('');
   const [passwordMsg, setPasswordMsg] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
-  const adminMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!adminMenuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target as Node)) {
-        setAdminMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [adminMenuOpen]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -104,52 +92,19 @@ export default function Header({ mobileView, onMobileViewChange }: Props) {
             </nav>
 
             {/* Desktop title + nav */}
-            <div className="hidden lg:flex items-center gap-6">
-              <div className="flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-5">
+              <Link href="/calendar" className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
                 <span className="font-bold text-gray-900">TSUKURU</span>
-              </div>
-              <nav className="flex items-center gap-1">
-                <NavLink href="/calendar" current={pathname}>カレンダー</NavLink>
-                <div className="relative" ref={adminMenuRef}>
-                  <button
-                    onClick={() => setAdminMenuOpen((v) => !v)}
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                      pathname?.startsWith('/presets') ||
-                      pathname?.startsWith('/stores') ||
-                      pathname?.startsWith('/accounts') ||
-                      pathname?.startsWith('/store-accounts') ||
-                      pathname?.startsWith('/import') ||
-                      pathname?.startsWith('/progress') ||
-                      pathname?.startsWith('/requests')
-                        ? 'bg-indigo-50 text-indigo-700'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    管理 ▾
-                  </button>
-                  {adminMenuOpen && (
-                    <div className="absolute left-0 top-full z-30 mt-1 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                      <AdminMenuLink href="/progress" onClick={() => setAdminMenuOpen(false)}>
-                        進捗管理
-                      </AdminMenuLink>
-                      <AdminMenuLink href="/presets" onClick={() => setAdminMenuOpen(false)}>
-                        プリセット
-                      </AdminMenuLink>
-                      <AdminMenuLink href="/stores" onClick={() => setAdminMenuOpen(false)}>
-                        店舗マスタ
-                      </AdminMenuLink>
-                      <AdminMenuLink href="/accounts" onClick={() => setAdminMenuOpen(false)}>
-                        アカウント管理
-                      </AdminMenuLink>
-                      <AdminMenuLink href="/import" onClick={() => setAdminMenuOpen(false)}>
-                        データ移行
-                      </AdminMenuLink>
-                    </div>
-                  )}
-                </div>
+              </Link>
+              <nav className="flex items-center gap-0.5">
+                {PAGE_NAV.map((p) => (
+                  <NavLink key={p.href} href={p.href} current={pathname}>
+                    {p.label}
+                  </NavLink>
+                ))}
               </nav>
             </div>
 
@@ -277,22 +232,3 @@ function NavLink({
   );
 }
 
-function AdminMenuLink({
-  href,
-  onClick,
-  children,
-}: {
-  href: string;
-  onClick?: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-    >
-      {children}
-    </Link>
-  );
-}
