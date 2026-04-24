@@ -2,9 +2,10 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // 店舗スタッフが認証なしで触れる公開パス。
-// / (プリセット選択), /new (依頼フォーム), /my/:token, /request/:id の
-// 4 つは TSUKURU 合併で追加された匿名公開ルート。
-const PUBLIC_PREFIXES = ['/new', '/my', '/request'];
+// / (ランディング), /select (プリセット選択), /new (依頼フォーム),
+// /my/:token, /request/:id の 5 種は匿名公開ルート。
+// /my (ログインユーザー用マイページ) は内部でさらに role 判定をする。
+const PUBLIC_PREFIXES = ['/select', '/new', '/my', '/request'];
 
 function isPublicPath(pathname: string): boolean {
   if (pathname === '/') return true;
