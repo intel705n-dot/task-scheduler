@@ -33,16 +33,19 @@ export default function AppLayout({
           <ShortcutPanel />
         </aside>
 
-        {/* Right: Main content (Calendar) */}
-        <main
-          className={`flex-1 overflow-y-auto p-4 ${
+        {/* Right: Main content (Calendar) +
+            左右切替ボタンはここの左右端に絶対配置 */}
+        <div
+          className={`relative flex-1 ${
             mobileView === 'calendar' ? 'block' : 'hidden lg:block'
           }`}
         >
-          <div className="max-w-5xl mx-auto">{children}</div>
-        </main>
+          <main className="absolute inset-0 overflow-y-auto p-4">
+            <div className="max-w-5xl mx-auto">{children}</div>
+          </main>
+          <PageSwitchArrows />
+        </div>
       </div>
-      <PageSwitchArrows />
     </>
   );
 }

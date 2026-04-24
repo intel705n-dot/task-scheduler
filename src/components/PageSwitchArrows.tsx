@@ -15,12 +15,14 @@ export default function PageSwitchArrows() {
   // page-nav に含まれない (たとえば /requests/:id などの詳細) では何も描画しない
   if (!prev || !next) return null;
 
+  // メインコンテンツ領域 (相対配置の親 <div>) の左右端に絶対配置。
+  // モバイルでは aside が隠れて main が全幅になるので同じ位置で問題なし。
   return (
     <>
       <button
         type="button"
         onClick={() => router.push(prev.href)}
-        className="group fixed left-1 top-1/2 z-20 hidden -translate-y-1/2 flex-col items-center gap-1 rounded-full bg-white/90 p-2 shadow-md backdrop-blur transition-all hover:bg-indigo-50 hover:text-indigo-700 lg:flex"
+        className="group absolute left-1 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-1 rounded-full bg-white/90 p-2 shadow-md backdrop-blur transition-all hover:bg-indigo-50 hover:text-indigo-700"
         aria-label={`前のページ: ${prev.label}`}
         title={`← ${prev.label}`}
       >
@@ -32,7 +34,7 @@ export default function PageSwitchArrows() {
       <button
         type="button"
         onClick={() => router.push(next.href)}
-        className="group fixed right-1 top-1/2 z-20 hidden -translate-y-1/2 flex-col items-center gap-1 rounded-full bg-white/90 p-2 shadow-md backdrop-blur transition-all hover:bg-indigo-50 hover:text-indigo-700 lg:flex"
+        className="group absolute right-1 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-1 rounded-full bg-white/90 p-2 shadow-md backdrop-blur transition-all hover:bg-indigo-50 hover:text-indigo-700"
         aria-label={`次のページ: ${next.label}`}
         title={`${next.label} →`}
       >
