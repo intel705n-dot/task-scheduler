@@ -46,16 +46,25 @@ export default function TaskPanel() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const fetchData = useCallback(async () => {
-    const [tasksRes, profilesRes, storesRes] = await Promise.all([
+    const [tasksRes, profilesRes, allowedRes, storesRes] = await Promise.all([
       supabase
         .from('tasks')
         .select('*, profiles(*), stores(*), linked_request:requests!linked_request_id(id,title,attachments)')
         .order('created_at', { ascending: false }),
       supabase.from('profiles').select('*'),
+      supabase.from('allowed_emails').select('email'),
       supabase.from('stores').select('*').order('ord').order('id'),
     ]);
     if (tasksRes.data) setTasks(tasksRes.data);
-    if (profilesRes.data) setProfiles(profilesRes.data);
+    if (profilesRes.data) {
+      // 担当者候補は管理者 (allowed_emails) のみ。店舗・個人は除外。
+      const adminEmails = new Set(
+        (allowedRes.data ?? []).map((r: { email: string }) => r.email),
+      );
+      setProfiles(
+        (profilesRes.data as Profile[]).filter((p) => adminEmails.has(p.email)),
+      );
+    }
     if (storesRes.data) setStores(storesRes.data);
     setLoading(false);
   }, [supabase]);

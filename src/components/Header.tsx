@@ -119,6 +119,7 @@ export default function Header({ mobileView, onMobileViewChange }: Props) {
                     className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                       pathname?.startsWith('/presets') ||
                       pathname?.startsWith('/stores') ||
+                      pathname?.startsWith('/accounts') ||
                       pathname?.startsWith('/store-accounts') ||
                       pathname?.startsWith('/import') ||
                       pathname?.startsWith('/requests')
@@ -139,8 +140,8 @@ export default function Header({ mobileView, onMobileViewChange }: Props) {
                       <AdminMenuLink href="/stores" onClick={() => setAdminMenuOpen(false)}>
                         店舗マスタ
                       </AdminMenuLink>
-                      <AdminMenuLink href="/store-accounts" onClick={() => setAdminMenuOpen(false)}>
-                        店舗アカウント
+                      <AdminMenuLink href="/accounts" onClick={() => setAdminMenuOpen(false)}>
+                        アカウント管理
                       </AdminMenuLink>
                       <AdminMenuLink href="/import" onClick={() => setAdminMenuOpen(false)}>
                         データ移行

@@ -1,5 +1,6 @@
-import StoreAccountsClient from './StoreAccountsClient';
+import { redirect } from 'next/navigation';
 
-export default function StoreAccountsPage() {
-  return <StoreAccountsClient />;
+// 旧 /store-accounts は /accounts (アカウント管理) へ統合済み
+export default function StoreAccountsRedirect() {
+  redirect('/accounts');
 }
