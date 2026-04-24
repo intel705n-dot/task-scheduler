@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-export default function LoginPage() {
+function LoginInner() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -11,6 +12,10 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get('next');
+  // next パラメータは同一サイト内 (/から始まる) のみ許可してオープンリダイレクトを防ぐ
+  const nextPath = nextParam && nextParam.startsWith('/') ? nextParam : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,8 +62,10 @@ export default function LoginPage() {
         return;
       }
 
-      // 管理者 → /calendar、店舗アカウント → /my (店舗の依頼一覧)
-      window.location.href = allowed ? '/calendar' : '/my';
+      // next が指定されていればそこへ、なければ role で振り分け
+      // (管理者 → /calendar、店舗アカウント → /my)
+      const dest = nextPath ?? (allowed ? '/calendar' : '/my');
+      window.location.href = dest;
     } catch {
       setError('エラーが発生しました');
     } finally {
@@ -70,10 +77,11 @@ export default function LoginPage() {
     setError('');
     setGoogleLoading(true);
     try {
+      const next = nextPath ?? '/my';
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/my`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
         },
       });
       if (authError) {
@@ -194,5 +202,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+      <LoginInner />
+    </Suspense>
   );
 }
