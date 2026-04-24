@@ -7,6 +7,7 @@ import { TASK_STATUSES, STATUS_COLORS } from '@/lib/types';
 import TaskModal from '@/components/TaskModal';
 import { ClipboardList, ImageIcon, Paperclip } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { useSharedFilters } from '@/lib/filters';
 
 type SortKey = 'created' | 'status' | 'assignee' | 'store' | 'due_date' | 'title';
 type SortDir = 'asc' | 'desc';
@@ -35,7 +36,13 @@ export default function TaskPanel() {
   // Filters
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterAssignee, setFilterAssignee] = useState<string>('all');
+  // 担当者・店舗は /progress と共有 (localStorage 経由)
+  const [shared, setShared] = useSharedFilters();
+  const filterAssignee = shared.assigneeId;
+  const filterStore = shared.storeId;
+  const setFilterAssignee = (v: string | 'all' | 'unassigned') =>
+    setShared({ assigneeId: v });
+  const setFilterStore = (v: number | 'all') => setShared({ storeId: v });
 
   // Sort
   const [sortKey, setSortKey] = useState<SortKey>('created');
@@ -173,6 +180,7 @@ export default function TaskPanel() {
     } else if (filterAssignee !== 'all') {
       if (t.assignee_id !== filterAssignee) return false;
     }
+    if (filterStore !== 'all' && t.store_id !== filterStore) return false;
     return true;
   });
 
@@ -385,10 +393,11 @@ export default function TaskPanel() {
           </select>
           <select
             value={filterAssignee}
-            onChange={(e) => setFilterAssignee(e.target.value)}
+            onChange={(e) => setFilterAssignee(e.target.value as 'all' | 'unassigned' | string)}
             className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900"
           >
             <option value="all">全担当者</option>
+            <option value="unassigned">未振り分け</option>
             {profiles
               .filter((p) => !hiddenProfiles.includes(p.display_name))
               .map((p) => (
@@ -396,6 +405,20 @@ export default function TaskPanel() {
             ))}
           </select>
         </div>
+        <select
+          value={filterStore}
+          onChange={(e) =>
+            setFilterStore(e.target.value === 'all' ? 'all' : Number(e.target.value))
+          }
+          className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900"
+        >
+          <option value="all">全店舗</option>
+          {stores.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Sort buttons */}

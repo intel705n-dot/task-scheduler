@@ -34,6 +34,7 @@ import type {
 } from '@/lib/types';
 import { fetchAllRequests, patchRequest } from '@/lib/requests';
 import { fmtDate } from '@/lib/request-utils';
+import { useSharedFilters } from '@/lib/filters';
 
 // task ↔ request ステータス双方向マップ
 const TASK_TO_DELIVERABLE: Record<TaskStatus, DeliverableStatus> = {
@@ -90,8 +91,12 @@ export default function ProgressClient() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
 
-  const [storeFilter, setStoreFilter] = useState<number | 'all'>('all');
-  const [assigneeFilter, setAssigneeFilter] = useState<string | 'all' | 'unassigned'>('all');
+  const [shared, setShared] = useSharedFilters();
+  const storeFilter = shared.storeId;
+  const assigneeFilter = shared.assigneeId;
+  const setStoreFilter = (v: number | 'all') => setShared({ storeId: v });
+  const setAssigneeFilter = (v: string | 'all' | 'unassigned') =>
+    setShared({ assigneeId: v });
   const [hideDone, setHideDone] = useState(false);
   const [typeFilter, setTypeFilter] = useState<'all' | 'task' | 'request'>('all');
   const [activeId, setActiveId] = useState<string | null>(null);
