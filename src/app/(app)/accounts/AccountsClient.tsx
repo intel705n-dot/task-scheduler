@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Profile, Store } from '@/lib/types';
-import { Trash2, Save, Plus, UserPlus, Store as StoreIcon, User } from 'lucide-react';
+import { Trash2, Save, Plus, UserPlus, Store as StoreIcon, User, Eye, EyeOff } from 'lucide-react';
 
 type StoreAccount = {
   email: string;
@@ -17,6 +17,8 @@ export default function AccountsClient() {
   const [allowedEmails, setAllowedEmails] = useState<string[]>([]);
   const [storeAccounts, setStoreAccounts] = useState<StoreAccount[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
+  const [storePasswords, setStorePasswords] = useState<Record<string, string>>({});
+  const [revealedPw, setRevealedPw] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(
     null,
@@ -24,16 +26,25 @@ export default function AccountsClient() {
   const [addModal, setAddModal] = useState<'admin' | 'store' | null>(null);
 
   const refresh = useCallback(async () => {
-    const [p, a, sa, s] = await Promise.all([
+    const [p, a, sa, s, sp] = await Promise.all([
       supabase.from('profiles').select('*').order('email'),
       supabase.from('allowed_emails').select('email'),
       supabase.from('store_accounts').select('*').order('created_at'),
       supabase.from('stores').select('*').order('ord').order('id'),
+      // store_account_passwords は管理者のみ SELECT 可。RLS で弾かれた場合は空。
+      supabase.from('store_account_passwords').select('email,password'),
     ]);
     if (p.data) setProfiles(p.data as Profile[]);
     if (a.data) setAllowedEmails(a.data.map((r) => r.email));
     if (sa.data) setStoreAccounts(sa.data as StoreAccount[]);
     if (s.data) setStores(s.data as Store[]);
+    if (sp.data) {
+      const map: Record<string, string> = {};
+      for (const row of sp.data as { email: string; password: string }[]) {
+        map[row.email] = row.password;
+      }
+      setStorePasswords(map);
+    }
     setLoading(false);
   }, [supabase]);
 
@@ -245,62 +256,95 @@ export default function AccountsClient() {
               <tr className="bg-gray-50 text-xs text-gray-500">
                 <th className="px-3 py-2 text-left">店舗</th>
                 <th className="px-3 py-2 text-left">メール</th>
+                <th className="px-3 py-2 text-left">パスワード</th>
                 <th className="px-3 py-2 text-left">表示名</th>
                 <th className="px-3 py-2 text-right">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {storeList.map((s) => (
-                <tr key={s.email}>
-                  <td className="px-3 py-2">
-                    <select
-                      value={s.store_id}
-                      onChange={(e) =>
-                        handleStoreUpdate(s.email, {
-                          store_id: Number(e.target.value),
-                        })
-                      }
-                      className="rounded-md border border-gray-300 px-2 py-1 text-sm"
-                    >
-                      {stores.map((st) => (
-                        <option key={st.id} value={st.id}>
-                          {st.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-3 py-2 font-mono text-xs text-gray-700">
-                    {s.email}
-                  </td>
-                  <td className="px-3 py-2">
-                    <EditableName
-                      value={s.display_name ?? ''}
-                      onSave={(v) =>
-                        handleStoreUpdate(s.email, { display_name: v || null })
-                      }
-                    />
-                  </td>
-                  <td className="px-3 py-2 text-right space-x-2">
-                    {s.profile && (
+              {storeList.map((s) => {
+                const pw = storePasswords[s.email];
+                const revealed = revealedPw[s.email];
+                return (
+                  <tr key={s.email}>
+                    <td className="px-3 py-2">
+                      <select
+                        value={s.store_id}
+                        onChange={(e) =>
+                          handleStoreUpdate(s.email, {
+                            store_id: Number(e.target.value),
+                          })
+                        }
+                        className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                      >
+                        {stores.map((st) => (
+                          <option key={st.id} value={st.id}>
+                            {st.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs text-gray-700">
+                      {s.email}
+                    </td>
+                    <td className="px-3 py-2">
+                      {pw ? (
+                        <div className="inline-flex items-center gap-1">
+                          <span className="font-mono text-xs text-gray-700 select-all">
+                            {revealed ? pw : '•'.repeat(Math.min(pw.length, 10))}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRevealedPw((prev) => ({
+                                ...prev,
+                                [s.email]: !prev[s.email],
+                              }))
+                            }
+                            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                            title={revealed ? '隠す' : '表示'}
+                          >
+                            {revealed ? (
+                              <EyeOff className="h-3.5 w-3.5" />
+                            ) : (
+                              <Eye className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">未保存</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <EditableName
+                        value={s.display_name ?? ''}
+                        onSave={(v) =>
+                          handleStoreUpdate(s.email, { display_name: v || null })
+                        }
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-right space-x-2">
+                      {s.profile && (
+                        <button
+                          type="button"
+                          onClick={() => handleResetPassword(s.profile!.id)}
+                          className="text-xs text-indigo-600 hover:underline"
+                        >
+                          パスワード再設定
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => handleResetPassword(s.profile!.id)}
-                        className="text-xs text-indigo-600 hover:underline"
+                        onClick={() => handleDelete(s.email, 'store')}
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                       >
-                        パスワード再設定
+                        <Trash2 className="h-3.5 w-3.5" />
+                        削除
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(s.email, 'store')}
-                      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      削除
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </AccountTable>
         )}

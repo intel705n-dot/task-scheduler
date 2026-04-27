@@ -123,6 +123,11 @@ export async function POST(req: Request) {
         { status: 500 },
       );
     }
+    // 店舗アカウントは管理者用にパスワードを平文保存しておく (RLS で管理者のみ閲覧可)
+    await adminClient.from('store_account_passwords').upsert(
+      { email, password: body.password },
+      { onConflict: 'email' },
+    );
   }
 
   // 3. profile が無ければ作る (handle_new_user トリガーで作られてるはずだが保険)
@@ -238,6 +243,23 @@ export async function PATCH(req: Request) {
         { error: `パスワード更新失敗: ${error.message}` },
         { status: 500 },
       );
+    }
+    // 店舗アカウントの場合は管理者表示用 plaintext テーブルも更新
+    const { data: userInfo } = await adminClient.auth.admin.getUserById(
+      body.userId,
+    );
+    const email = userInfo?.user?.email?.toLowerCase();
+    if (email) {
+      const { data: storeRow } = await adminClient
+        .from('store_accounts')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle();
+      if (storeRow) {
+        await adminClient
+          .from('store_account_passwords')
+          .upsert({ email, password: body.password }, { onConflict: 'email' });
+      }
     }
   }
 
