@@ -176,10 +176,13 @@ export type AwardRecipient = {
 export type AwardRecipientV2 = {
   rank?: string;            // "1", "2", "3" ... or "同1" 同順位など
   name?: string;
-  comment?: string;         // SNS賞達成内容など任意メモ
-  prizeAmount?: number;     // 賞金額(円)
+  // ポイント (pt 単位、小数点第二位まで)
+  points?: number;
   hasCertificate: boolean;  // 賞状の有無
   hasEnvelope: boolean;     // 封筒の有無
+  // 旧フィールド (互換)
+  comment?: string;
+  prizeAmount?: number;
 };
 
 // 新: 表彰項目 (月間ベストオール、SNS賞 など)

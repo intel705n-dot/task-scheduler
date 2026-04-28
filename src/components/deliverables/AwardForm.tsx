@@ -23,15 +23,44 @@ export default function AwardForm({ value, onChange, storeName }: Props) {
 
   const items: AwardItem[] = value.items ?? [];
 
-  // 初回 (items 未設定 + テンプレキー判定可能) で自動展開
+  // 店舗テンプレート自動展開 / 切替
   useEffect(() => {
-    if (value.items !== undefined && value.items.length > 0) return;
-    if (value.storeTemplate) return; // 既に手動選択済み
-    const key = templateKeyForStoreName(storeName);
-    if (key) {
+    const newKey = templateKeyForStoreName(storeName);
+    if (!newKey) return; // 認識できない店舗
+    const items = value.items ?? [];
+
+    // 初回: items 未設定 / 空 → 即適用
+    if (items.length === 0) {
       onChange({
-        items: buildTemplateByKey(key),
-        storeTemplate: key,
+        items: buildTemplateByKey(newKey),
+        storeTemplate: newKey,
+      });
+      return;
+    }
+
+    // 同じテンプレならスキップ
+    if (value.storeTemplate === newKey) return;
+
+    // 別テンプレが入ってる: ユーザー入力 (受賞者名) が無ければ自動切替、あれば確認
+    const hasUserData = items.some((it) =>
+      it.recipients.some((r) => r.name?.trim()),
+    );
+    if (!hasUserData) {
+      onChange({
+        items: buildTemplateByKey(newKey),
+        storeTemplate: newKey,
+      });
+      return;
+    }
+    if (
+      typeof window !== 'undefined' &&
+      window.confirm(
+        `店舗が切り替わりました。表彰項目テンプレートも ${newKey === 'fushicho' ? '不死鳥' : '蘭○'} に切り替えますか?\n(現在の入力内容は失われます)`,
+      )
+    ) {
+      onChange({
+        items: buildTemplateByKey(newKey),
+        storeTemplate: newKey,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -307,10 +336,10 @@ function AwardItemCard({
 
           {/* 受賞者リスト */}
           <div className="space-y-1.5">
-            <div className="grid grid-cols-[56px_1fr_72px_44px_44px_44px] gap-1 px-1 text-[10px] font-semibold text-gray-500">
+            <div className="grid grid-cols-[56px_1fr_88px_44px_44px_44px] gap-1 px-1 text-[10px] font-semibold text-gray-500">
               <span>順位</span>
-              <span>名前 / 内容</span>
-              <span className="text-right">賞金</span>
+              <span>名前</span>
+              <span className="text-right">ポイント (pt)</span>
               <span className="text-center">賞状</span>
               <span className="text-center">封筒</span>
               <span></span>
@@ -352,38 +381,36 @@ function RecipientRow({
 }) {
   const inputCls = 'w-full rounded border border-gray-300 px-2 py-1 text-xs';
   return (
-    <div className="grid grid-cols-[56px_1fr_72px_44px_44px_44px] gap-1 items-center">
+    <div className="grid grid-cols-[56px_1fr_88px_44px_44px_44px] gap-1 items-center">
       <input
         className={inputCls}
         placeholder="-"
         value={value.rank ?? ''}
         onChange={(e) => onChange({ rank: e.target.value || undefined })}
       />
-      <div className="flex flex-col gap-0.5">
-        <input
-          className={inputCls}
-          placeholder="氏名"
-          value={value.name ?? ''}
-          onChange={(e) => onChange({ name: e.target.value })}
-        />
-        <input
-          className={inputCls + ' text-[11px]'}
-          placeholder="達成内容など (任意)"
-          value={value.comment ?? ''}
-          onChange={(e) => onChange({ comment: e.target.value })}
-        />
-      </div>
+      <input
+        className={inputCls}
+        placeholder="氏名"
+        value={value.name ?? ''}
+        onChange={(e) => onChange({ name: e.target.value })}
+      />
       <input
         type="number"
+        step="0.01"
+        min="0"
         className={inputCls + ' text-right'}
-        placeholder="-"
-        value={value.prizeAmount ?? ''}
-        onChange={(e) =>
-          onChange({
-            prizeAmount:
-              e.target.value === '' ? undefined : Number(e.target.value),
-          })
-        }
+        placeholder="0.00"
+        value={value.points ?? ''}
+        onChange={(e) => {
+          const raw = e.target.value;
+          if (raw === '') {
+            onChange({ points: undefined });
+            return;
+          }
+          // 小数第二位までに丸める
+          const num = Math.round(Number(raw) * 100) / 100;
+          onChange({ points: Number.isFinite(num) ? num : undefined });
+        }}
       />
       <label className="flex items-center justify-center">
         <input
