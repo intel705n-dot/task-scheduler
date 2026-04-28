@@ -165,16 +165,42 @@ export type BusinessCardDetails = CommonDeliverableInfo & {
   notes?: string;
 };
 
+// 旧表彰受賞者 (互換用、新フォームでは使わない)
 export type AwardRecipient = {
   awardType: string;
   rank?: string;
   name: string;
 };
 
+// 新: 各受賞者
+export type AwardRecipientV2 = {
+  rank?: string;            // "1", "2", "3" ... or "同1" 同順位など
+  name?: string;
+  comment?: string;         // SNS賞達成内容など任意メモ
+  prizeAmount?: number;     // 賞金額(円)
+  hasCertificate: boolean;  // 賞状の有無
+  hasEnvelope: boolean;     // 封筒の有無
+};
+
+// 新: 表彰項目 (月間ベストオール、SNS賞 など)
+export type AwardItem = {
+  id: string;
+  itemName: string;
+  rankRange?: string;       // "1〜5位" / "-" など (UI 表示用ラベル)
+  presetType: 'permanent' | 'variable' | 'custom';
+  notes?: string;           // 社長名など項目固有のメモ
+  collapsed?: boolean;      // UI: 折りたたみ状態
+  recipients: AwardRecipientV2[];
+};
+
 export type AwardDetails = CommonDeliverableInfo & {
   ceremonyDate: string;
-  printMaterials: string[];
-  recipients: AwardRecipient[];
+  targetMonth?: string;       // "2026-04" (任意)
+  storeTemplate?: 'fushicho' | 'ranmaru' | 'custom';
+  items?: AwardItem[];        // 新フォーマット
+  // 旧データ互換 (一覧表示用)
+  printMaterials?: string[];
+  recipients?: AwardRecipient[];
   notes?: string;
 };
 

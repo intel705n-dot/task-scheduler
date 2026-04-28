@@ -314,6 +314,11 @@ export default function NewRequestForm({ stores, presets }: Props) {
                 deliverable={d}
                 index={i}
                 stores={stores}
+                selectedStoreName={
+                  storeId !== null
+                    ? stores.find((s) => s.id === storeId)?.name
+                    : undefined
+                }
                 onUpdate={(patch) => updateDeliverable(d.id, patch)}
                 onUpdateDetails={(patch) => updateDeliverableDetails(d.id, patch)}
                 onRemove={() => removeDeliverable(d.id)}

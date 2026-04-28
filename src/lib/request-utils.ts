@@ -81,9 +81,8 @@ export function defaultDetailsFor(category: DeliverableCategory): DeliverableDet
       return {
         ...EMPTY_COMMON,
         ceremonyDate: '',
-        printMaterials: [],
-        recipients: [],
-        notes: '',
+        targetMonth: '',
+        items: [],
       };
     case 'other':
       return {

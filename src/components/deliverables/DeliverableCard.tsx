@@ -31,6 +31,8 @@ type Props = {
   // QR コード画像 (名刺成果物のみ使用)。複数 QR 対応のため配列。
   qrFiles?: (File | null)[];
   onQrFilesChange?: (files: (File | null)[]) => void;
+  // 表彰状テンプレート自動展開のために店舗名を渡す
+  selectedStoreName?: string;
 };
 
 export default function DeliverableCard({
@@ -45,6 +47,7 @@ export default function DeliverableCard({
   onFilesChange,
   qrFiles,
   onQrFilesChange,
+  selectedStoreName,
 }: Props) {
   void _stores;
   const { category, details } = deliverable;
@@ -74,13 +77,15 @@ export default function DeliverableCard({
       </div>
 
       {/* 新規作成フォーム時のみ共通フィールドを編集表示する。詳細閲覧では省略。
-          従業員名刺は名前・部数・電話など独自項目のみで、共通フィールド (タイトル/内容/期間等) は不要。 */}
+          従業員名刺は名前・部数・電話など独自項目のみで、共通フィールド (タイトル/内容/期間等) は不要。
+          賞状はイベント期間/納品希望日が不要 (代わりに表彰式日)。 */}
       {onFilesChange && category !== 'businessCard' && (
         <CommonFieldsForm
           common={common}
           onChange={onUpdateDetails}
           files={files ?? []}
           onFilesChange={onFilesChange}
+          showSchedule={category !== 'award'}
         />
       )}
 
@@ -100,7 +105,11 @@ export default function DeliverableCard({
         />
       )}
       {category === 'award' && (
-        <AwardForm value={details as AwardDetails} onChange={onUpdateDetails} />
+        <AwardForm
+          value={details as AwardDetails}
+          onChange={onUpdateDetails}
+          storeName={selectedStoreName}
+        />
       )}
       {category === 'other' && (
         <OtherForm value={details as OtherDetails} onChange={onUpdateDetails} />
@@ -115,11 +124,13 @@ function CommonFieldsForm({
   onChange,
   files,
   onFilesChange,
+  showSchedule = true,
 }: {
   common: CommonDeliverableInfo;
   onChange: (patch: Record<string, unknown>) => void;
   files: File[];
   onFilesChange: (next: File[]) => void;
+  showSchedule?: boolean;
 }) {
   const inputCls =
     'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900';
@@ -148,26 +159,28 @@ function CommonFieldsForm({
           required
         />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className={labelCls}>イベント期間</label>
-          <input
-            className={inputCls}
-            placeholder="例: 4/20 - 4/27"
-            value={common.eventPeriod ?? ''}
-            onChange={(e) => onChange({ eventPeriod: e.target.value })}
-          />
+      {showSchedule && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className={labelCls}>イベント期間</label>
+            <input
+              className={inputCls}
+              placeholder="例: 4/20 - 4/27"
+              value={common.eventPeriod ?? ''}
+              onChange={(e) => onChange({ eventPeriod: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>納品希望日</label>
+            <input
+              type="date"
+              className={inputCls}
+              value={common.dueDate ?? ''}
+              onChange={(e) => onChange({ dueDate: e.target.value })}
+            />
+          </div>
         </div>
-        <div>
-          <label className={labelCls}>納品希望日</label>
-          <input
-            type="date"
-            className={inputCls}
-            value={common.dueDate ?? ''}
-            onChange={(e) => onChange({ dueDate: e.target.value })}
-          />
-        </div>
-      </div>
+      )}
       <div>
         <label className={labelCls}>参考資料URL</label>
         <div className="space-y-2">
