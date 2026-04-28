@@ -20,27 +20,26 @@ const ORIENTATIONS: { value: Orientation; label: string }[] = [
 
 export default function PosterPopForm({ category, value, onChange }: Props) {
   const sizeOptions = category === 'poster' ? POSTER_SIZES : POP_SIZES;
-
-  const toggleSize = (s: string) => {
-    const current = value.sizes ?? [];
-    const next = current.includes(s) ? current.filter((x) => x !== s) : [...current, s];
-    onChange({ sizes: next });
-  };
+  // 旧データ (sizes 配列) 互換: 配列の先頭を size に昇格
+  const currentSize =
+    value.size ?? (Array.isArray(value.sizes) ? value.sizes[0] : '') ?? '';
 
   return (
     <div className="space-y-4">
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">
-          サイズ(複数選択可)
+          サイズ * <span className="text-xs text-gray-500">(複数欲しい場合は成果物を追加)</span>
         </label>
         <div className="flex flex-wrap gap-2">
           {sizeOptions.map((s) => {
-            const active = value.sizes?.includes(s);
+            const active = currentSize === s;
             return (
               <button
                 key={s}
                 type="button"
-                onClick={() => toggleSize(s)}
+                onClick={() =>
+                  onChange({ size: active ? '' : s, sizes: undefined })
+                }
                 className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-medium transition ${
                   active
                     ? 'border-gray-900 bg-gray-900 text-white'
@@ -53,25 +52,14 @@ export default function PosterPopForm({ category, value, onChange }: Props) {
           })}
           <input
             type="text"
-            placeholder="その他サイズを追加して Enter"
-            className="w-56 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                const v = (e.target as HTMLInputElement).value.trim();
-                if (v && !value.sizes?.includes(v)) {
-                  onChange({ sizes: [...(value.sizes ?? []), v] });
-                  (e.target as HTMLInputElement).value = '';
-                }
-              }
-            }}
+            placeholder="その他サイズを入力"
+            className="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            value={
+              !sizeOptions.includes(currentSize) ? currentSize : ''
+            }
+            onChange={(e) => onChange({ size: e.target.value, sizes: undefined })}
           />
         </div>
-        {value.sizes && value.sizes.length > 0 && (
-          <div className="mt-2 text-xs text-gray-500">
-            選択中: {value.sizes.join(', ')}
-          </div>
-        )}
       </div>
 
       <div>
@@ -104,7 +92,7 @@ export default function PosterPopForm({ category, value, onChange }: Props) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">印刷枚数</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700">印刷枚数 *</label>
           <input
             type="number"
             min={0}
@@ -124,18 +112,6 @@ export default function PosterPopForm({ category, value, onChange }: Props) {
             onChange={(e) => onChange({ paperType: e.target.value })}
           />
         </div>
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          データ納品サイズ指定
-        </label>
-        <input
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          placeholder="例: A2原寸、塗り足し3mm"
-          value={value.deliverySize ?? ''}
-          onChange={(e) => onChange({ deliverySize: e.target.value })}
-        />
       </div>
 
       <div>

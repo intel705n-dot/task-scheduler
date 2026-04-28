@@ -113,25 +113,48 @@ export type RequestPriority = 'normal' | 'high' | 'urgent';
 
 export type Orientation = 'vertical' | 'horizontal' | 'free' | 'other';
 
-export type PosterPopDetails = {
-  sizes: string[];
+// 各成果物に共通で持つ基本情報 (タイトル/内容/期間/納期/参考URL/添付)
+// 2026-04-29: 「基本情報」セクションから 店舗+依頼者名 以外を per-deliverable に移動。
+export type CommonDeliverableInfo = {
+  title?: string;
+  content?: string;
+  eventPeriod?: string;
+  dueDate?: string;
+  referenceUrls?: string[];
+  attachments?: Attachment[];
+};
+
+export type PosterPopDetails = CommonDeliverableInfo & {
+  // 単一選択 (複数欲しい場合は成果物を追加)
+  size?: string;
+  // 互換用 (旧データに sizes が残っているため読み取り側で許容)
+  sizes?: string[];
   orientation: Orientation;
   orientationOther?: string;
   printCount?: number;
   paperType?: string;
+  // deliverySize は廃止 (旧データ互換用に optional で残す)
   deliverySize?: string;
   notes?: string;
 };
 
-export type BusinessCardDetails = {
+export type BusinessCardDetails = CommonDeliverableInfo & {
   nameKanji: string;
   nameRomaji?: string;
   nameKana?: string;
   position?: string;
-  storeVariants: string[];
+  // 部数 (1-5)。1部 = 100枚。
+  quantity?: number;
+  // 旧データ互換用 (掲載する店舗電話)。新フォームでは入力させない。
+  storeVariants?: string[];
   phoneOverride?: string;
   email?: string;
-  lineQr: boolean;
+  // QR コード関連 (旧 lineQr / lineQrNote から汎用化)
+  hasQrCode?: boolean;
+  qrCodeNote?: string;
+  qrCodeAttachment?: Attachment;
+  // 旧キーも互換用に残す
+  lineQr?: boolean;
   lineQrNote?: string;
   notes?: string;
 };
@@ -142,14 +165,14 @@ export type AwardRecipient = {
   name: string;
 };
 
-export type AwardDetails = {
+export type AwardDetails = CommonDeliverableInfo & {
   ceremonyDate: string;
   printMaterials: string[];
   recipients: AwardRecipient[];
   notes?: string;
 };
 
-export type OtherDetails = {
+export type OtherDetails = CommonDeliverableInfo & {
   sizes?: string[];
   printCount?: number;
   notes?: string;
@@ -231,7 +254,7 @@ export type Preset = {
 export const CATEGORY_LABELS: Record<DeliverableCategory, string> = {
   poster: 'ポスター',
   pop: '卓上POP',
-  businessCard: '名刺',
+  businessCard: '従業員名刺',
   award: '賞状・表彰状',
   other: 'その他',
 };

@@ -42,33 +42,45 @@ export function getLatestStoredToken(): string | null {
   return t.length > 0 ? t[t.length - 1] : null;
 }
 
+// 全成果物共通の初期値 (タイトル/内容/期間/納期/参考URL/添付)。
+const EMPTY_COMMON = {
+  title: '',
+  content: '',
+  eventPeriod: '',
+  dueDate: '',
+  referenceUrls: [],
+  attachments: [],
+};
+
 export function defaultDetailsFor(category: DeliverableCategory): DeliverableDetails {
   switch (category) {
     case 'poster':
     case 'pop':
       return {
-        sizes: category === 'pop' ? ['はがき'] : [],
+        ...EMPTY_COMMON,
+        size: category === 'pop' ? 'はがき' : '',
         orientation: 'vertical',
         printCount: category === 'pop' ? 40 : 1,
         paperType: '',
-        deliverySize: '',
         notes: '',
       };
     case 'businessCard':
       return {
+        ...EMPTY_COMMON,
         nameKanji: '',
         nameRomaji: '',
         nameKana: '',
         position: '',
-        storeVariants: [],
+        quantity: 1,
         phoneOverride: '',
         email: '',
-        lineQr: false,
-        lineQrNote: '',
+        hasQrCode: false,
+        qrCodeNote: '',
         notes: '',
       };
     case 'award':
       return {
+        ...EMPTY_COMMON,
         ceremonyDate: '',
         printMaterials: [],
         recipients: [],
@@ -76,6 +88,7 @@ export function defaultDetailsFor(category: DeliverableCategory): DeliverableDet
       };
     case 'other':
       return {
+        ...EMPTY_COMMON,
         sizes: [],
         printCount: 1,
         notes: '',
