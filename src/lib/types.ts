@@ -138,6 +138,11 @@ export type PosterPopDetails = CommonDeliverableInfo & {
   notes?: string;
 };
 
+export type QrCodeEntry = {
+  note?: string;
+  attachment?: Attachment;
+};
+
 export type BusinessCardDetails = CommonDeliverableInfo & {
   nameKanji: string;
   nameRomaji?: string;
@@ -149,11 +154,12 @@ export type BusinessCardDetails = CommonDeliverableInfo & {
   storeVariants?: string[];
   phoneOverride?: string;
   email?: string;
-  // QR コード関連 (旧 lineQr / lineQrNote から汎用化)
+  // QR コード (複数可。空配列なら無し扱い)
+  qrCodes?: QrCodeEntry[];
+  // 旧データ互換 (新フォームでは qrCodes に統一)
   hasQrCode?: boolean;
   qrCodeNote?: string;
   qrCodeAttachment?: Attachment;
-  // 旧キーも互換用に残す
   lineQr?: boolean;
   lineQrNote?: string;
   notes?: string;

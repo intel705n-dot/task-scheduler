@@ -44,10 +44,11 @@ export default function NewRequestForm({ stores, presets }: Props) {
   const [storeId, setStoreId] = useState<number | null>(null);
   const [requesterName, setRequesterName] = useState('');
   // 成果物ごとの添付ファイル / QR画像 (deliverable.id をキーにしたマップ)
+  // QR は複数追加可なので配列。
   const [filesByDel, setFilesByDel] = useState<Record<string, File[]>>({});
-  const [qrFilesByDel, setQrFilesByDel] = useState<Record<string, File | null>>(
-    {},
-  );
+  const [qrFilesByDel, setQrFilesByDel] = useState<
+    Record<string, (File | null)[]>
+  >({});
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,8 +111,9 @@ export default function NewRequestForm({ stores, presets }: Props) {
     });
   };
 
-  // 各成果物に title/content が入っているかチェック
+  // 各成果物に title/content が入っているかチェック (従業員名刺は共通フィールド非表示なので除外)
   const allDeliverablesHaveCommonRequired = deliverables.every((d) => {
+    if (d.category === 'businessCard') return true;
     const c = d.details as CommonDeliverableInfo;
     return Boolean(c.title?.trim()) && Boolean(c.content?.trim());
   });
@@ -134,7 +136,7 @@ export default function NewRequestForm({ stores, presets }: Props) {
 
       const hasAnyFile =
         Object.values(filesByDel).some((arr) => arr.length > 0) ||
-        Object.values(qrFilesByDel).some(Boolean);
+        Object.values(qrFilesByDel).some((arr) => arr.some(Boolean));
 
       if (hasAnyFile && !isDropboxConfigured()) {
         throw new Error(
@@ -160,36 +162,60 @@ export default function NewRequestForm({ stores, presets }: Props) {
           });
         }
 
-        let qrAttachment: Attachment | undefined;
-        const qrFile = qrFilesByDel[d.id];
-        if (qrFile) {
-          const { path, downloadUrl } = await uploadToDropbox(`${sub}/qr`, qrFile);
-          qrAttachment = {
-            name: qrFile.name,
-            storagePath: path,
-            downloadUrl,
-            mimeType: qrFile.type,
-            sizeBytes: qrFile.size,
-            uploadedAt: new Date().toISOString(),
-          };
-        }
-
-        const merged: DeliverableDetails = {
+        // QR コード画像 (複数可) を qrCodes 配列に対応させてアップロード
+        let mergedDetails = {
           ...(d.details as DeliverableDetails),
           attachments,
-          ...(qrAttachment ? { qrCodeAttachment: qrAttachment } : {}),
         } as DeliverableDetails;
+        if (d.category === 'businessCard') {
+          const detailsAsBC = d.details as import('@/lib/types').BusinessCardDetails;
+          const qrCodes = detailsAsBC.qrCodes ?? [];
+          const qrUploads = qrFilesByDel[d.id] ?? [];
+          const updatedQrCodes = await Promise.all(
+            qrCodes.map(async (entry, qrIdx) => {
+              const f = qrUploads[qrIdx];
+              if (!f) return entry;
+              const { path, downloadUrl } = await uploadToDropbox(
+                `${sub}/qr${qrIdx + 1}`,
+                f,
+              );
+              return {
+                ...entry,
+                attachment: {
+                  name: f.name,
+                  storagePath: path,
+                  downloadUrl,
+                  mimeType: f.type,
+                  sizeBytes: f.size,
+                  uploadedAt: new Date().toISOString(),
+                },
+              };
+            }),
+          );
+          mergedDetails = {
+            ...mergedDetails,
+            qrCodes: updatedQrCodes,
+          } as DeliverableDetails;
+        }
 
-        finalDeliverables.push({ ...d, details: merged });
+        finalDeliverables.push({ ...d, details: mergedDetails });
       }
 
-      // request 行に持たせる集約値: 1件目をベースに使う (legacy 互換)
+      // request 行に持たせる集約値: 1件目をベースに、なければ次を見る
+      const titleFor = (d: Deliverable): string => {
+        if (d.category === 'businessCard') {
+          const bc = d.details as import('@/lib/types').BusinessCardDetails;
+          return bc.nameKanji ? `${bc.nameKanji} の名刺` : '従業員名刺';
+        }
+        return (d.details as CommonDeliverableInfo).title ?? '';
+      };
       const first = finalDeliverables[0];
       const firstCommon = first.details as CommonDeliverableInfo;
+      const baseTitle = titleFor(first);
       const aggregateTitle =
         finalDeliverables.length === 1
-          ? firstCommon.title ?? ''
-          : `${firstCommon.title ?? ''} 他${finalDeliverables.length - 1}件`;
+          ? baseTitle
+          : `${baseTitle} 他${finalDeliverables.length - 1}件`;
 
       const allReferenceUrls = finalDeliverables.flatMap(
         (d) => (d.details as CommonDeliverableInfo).referenceUrls ?? [],
@@ -296,9 +322,9 @@ export default function NewRequestForm({ stores, presets }: Props) {
                 onFilesChange={(next) =>
                   setFilesByDel((prev) => ({ ...prev, [d.id]: next }))
                 }
-                qrFile={qrFilesByDel[d.id] ?? null}
-                onQrFileChange={(f) =>
-                  setQrFilesByDel((prev) => ({ ...prev, [d.id]: f }))
+                qrFiles={qrFilesByDel[d.id] ?? []}
+                onQrFilesChange={(next) =>
+                  setQrFilesByDel((prev) => ({ ...prev, [d.id]: next }))
                 }
               />
             ))}

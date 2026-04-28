@@ -28,9 +28,9 @@ type Props = {
   // 新規作成 (NewRequestForm) のみ使用。詳細閲覧画面では渡さない。
   files?: File[];
   onFilesChange?: (files: File[]) => void;
-  // QR コード画像 (名刺成果物のみ使用)
-  qrFile?: File | null;
-  onQrFileChange?: (file: File | null) => void;
+  // QR コード画像 (名刺成果物のみ使用)。複数 QR 対応のため配列。
+  qrFiles?: (File | null)[];
+  onQrFilesChange?: (files: (File | null)[]) => void;
 };
 
 export default function DeliverableCard({
@@ -43,8 +43,8 @@ export default function DeliverableCard({
   canRemove,
   files,
   onFilesChange,
-  qrFile,
-  onQrFileChange,
+  qrFiles,
+  onQrFilesChange,
 }: Props) {
   void _stores;
   const { category, details } = deliverable;
@@ -73,8 +73,9 @@ export default function DeliverableCard({
         )}
       </div>
 
-      {/* 新規作成フォーム時のみ共通フィールドを編集表示する。詳細閲覧では省略。 */}
-      {onFilesChange && (
+      {/* 新規作成フォーム時のみ共通フィールドを編集表示する。詳細閲覧では省略。
+          従業員名刺は名前・部数・電話など独自項目のみで、共通フィールド (タイトル/内容/期間等) は不要。 */}
+      {onFilesChange && category !== 'businessCard' && (
         <CommonFieldsForm
           common={common}
           onChange={onUpdateDetails}
@@ -94,8 +95,8 @@ export default function DeliverableCard({
         <BusinessCardForm
           value={details as BusinessCardDetails}
           onChange={onUpdateDetails}
-          qrFile={qrFile ?? null}
-          onQrFileChange={onQrFileChange ?? (() => {})}
+          qrFiles={qrFiles ?? []}
+          onQrFilesChange={onQrFilesChange ?? (() => {})}
         />
       )}
       {category === 'award' && (

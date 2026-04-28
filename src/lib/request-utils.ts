@@ -74,8 +74,7 @@ export function defaultDetailsFor(category: DeliverableCategory): DeliverableDet
         quantity: 1,
         phoneOverride: '',
         email: '',
-        hasQrCode: false,
-        qrCodeNote: '',
+        qrCodes: [],
         notes: '',
       };
     case 'award':
