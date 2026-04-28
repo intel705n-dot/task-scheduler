@@ -23,12 +23,13 @@ import { insertRequest } from '@/lib/requests';
 import { isDropboxConfigured, uploadToDropbox } from '@/lib/dropbox';
 import DeliverableCard from '@/components/deliverables/DeliverableCard';
 
+// 「その他」カテゴリは新規追加メニューから外す。
+// (旧データに other が残っていても表示は壊れない: 型 / OtherForm は維持)
 const CATEGORIES: DeliverableCategory[] = [
   'poster',
   'pop',
   'businessCard',
   'award',
-  'other',
 ];
 
 type Props = {
