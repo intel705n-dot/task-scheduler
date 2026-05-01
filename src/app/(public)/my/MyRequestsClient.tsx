@@ -182,12 +182,28 @@ export default function MyRequestsClient() {
         {role === 'store' && storeName ? ` (${storeName} アカウント)` : ''}
       </p>
 
+      {/* 新規依頼 CTA */}
+      <Link
+        href="/select"
+        className="mt-4 flex items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50 p-4 shadow-sm transition hover:border-indigo-400 hover:bg-indigo-100"
+      >
+        <div>
+          <div className="text-sm font-bold text-indigo-900">
+            ＋ 新しい依頼を送る
+          </div>
+          <p className="mt-0.5 text-xs text-indigo-700">
+            ポスター・POP・名刺・賞状などの制作を依頼できます
+          </p>
+        </div>
+        <span className="text-lg text-indigo-700">→</span>
+      </Link>
+
       <div className="mt-6 space-y-3">
         {requests.length === 0 && (
           <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500 shadow-sm">
             {role === 'store'
               ? 'この店舗宛ての依頼はまだありません。'
-              : 'まだ依頼がありません。'}
+              : 'まだ依頼がありません。上のボタンから新規依頼を送れます。'}
           </div>
         )}
         {requests.map((r) => (
