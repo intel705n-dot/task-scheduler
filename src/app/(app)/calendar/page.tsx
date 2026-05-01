@@ -44,7 +44,7 @@ export default function CalendarPage() {
     const endDay = getDaysInMonth(year, month);
     const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
-    const [eventsRes, requestsRes, profilesRes, storesRes] = await Promise.all([
+    const [eventsRes, requestsRes, profilesRes, allowedRes, storesRes] = await Promise.all([
       supabase
         .from('events')
         .select('*, profiles(*), stores(*)')
@@ -59,11 +59,20 @@ export default function CalendarPage() {
         .lte('due_date', endDate)
         .neq('status', 'cancelled'),
       supabase.from('profiles').select('*'),
+      supabase.from('allowed_emails').select('email'),
       supabase.from('stores').select('*').order('ord').order('id'),
     ]);
     if (eventsRes.data) setEvents(eventsRes.data);
     if (requestsRes.data) setRequests(requestsRes.data as RequestRow[]);
-    if (profilesRes.data) setProfiles(profilesRes.data);
+    if (profilesRes.data) {
+      // 担当者候補は管理者 (allowed_emails) のみ
+      const adminEmails = new Set(
+        (allowedRes.data ?? []).map((r: { email: string }) => r.email),
+      );
+      setProfiles(
+        (profilesRes.data as Profile[]).filter((p) => adminEmails.has(p.email)),
+      );
+    }
     if (storesRes.data) setStores(storesRes.data);
     setLoading(false);
   }, [supabase, year, month]);
