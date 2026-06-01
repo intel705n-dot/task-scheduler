@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import type { CalendarEvent, Profile, RequestRow, Store } from '@/lib/types';
-import EventModal from '@/components/EventModal';
+import EventModal, { type EventCopyTemplate } from '@/components/EventModal';
 
 const WEEKDAY_LABELS = ['月', '火', '水', '木', '金', '土', '日'];
 
@@ -38,6 +38,9 @@ export default function CalendarPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
+
+  // Copy / paste: 別日に同じ内容の予定を量産するためのテンプレート
+  const [copyTemplate, setCopyTemplate] = useState<EventCopyTemplate | null>(null);
 
   const fetchData = useCallback(async () => {
     const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
@@ -138,6 +141,21 @@ export default function CalendarPage() {
     fetchData();
   };
 
+  // 既存予定の内容をクリップボードに保持。閉じた後、別日をクリックすると
+  // 同じ内容で日付だけ差し替わったフォームが開く。
+  const handleCopy = (evt: CalendarEvent) => {
+    setCopyTemplate({
+      title: evt.title,
+      start_time: evt.start_time || '',
+      end_time: evt.end_time || '',
+      assignee_id: evt.assignee_id || '',
+      store_id: evt.store_id?.toString() || '',
+      notes: evt.notes || '',
+    });
+    setModalOpen(false);
+    setEditingEvent(null);
+  };
+
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfWeek(year, month);
 
@@ -159,6 +177,26 @@ export default function CalendarPage() {
 
   return (
     <div>
+      {/* コピー中バナー */}
+      {copyTemplate && (
+        <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2">
+          <div className="min-w-0 flex-1 text-xs text-indigo-900">
+            <span className="mr-1">📋 コピー中:</span>
+            <span className="font-semibold">{copyTemplate.title || '(タイトルなし)'}</span>
+            <span className="ml-2 hidden text-[10px] text-indigo-700 sm:inline">
+              日付をクリックでペースト
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCopyTemplate(null)}
+            className="flex-shrink-0 rounded-md border border-indigo-300 bg-white px-2 py-1 text-[10px] font-medium text-indigo-700 hover:bg-indigo-100"
+          >
+            キャンセル
+          </button>
+        </div>
+      )}
+
       {/* Month Navigation */}
       <div className="flex items-center justify-between mb-4">
         <button
@@ -214,9 +252,11 @@ export default function CalendarPage() {
             return (
               <div
                 key={dateStr}
-                className={`min-h-[80px] sm:min-h-[100px] border-b border-r border-gray-100 p-1 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  isToday ? 'bg-indigo-50/50' : ''
-                }`}
+                className={`min-h-[80px] sm:min-h-[100px] border-b border-r border-gray-100 p-1 transition-colors ${
+                  copyTemplate
+                    ? 'cursor-copy hover:bg-indigo-50/60'
+                    : 'cursor-pointer hover:bg-gray-50'
+                } ${isToday ? 'bg-indigo-50/50' : ''}`}
                 onClick={() => {
                   setSelectedDate(dateStr);
                   setEditingEvent(null);
@@ -339,9 +379,11 @@ export default function CalendarPage() {
         <EventModal
           event={editingEvent}
           defaultDate={selectedDate}
+          template={editingEvent ? null : copyTemplate}
           profiles={profiles}
           stores={stores}
           onSave={handleSave}
+          onCopy={handleCopy}
           onDelete={handleDelete}
           onClose={() => {
             setModalOpen(false);

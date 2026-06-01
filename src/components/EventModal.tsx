@@ -13,25 +13,46 @@ type EventFormData = {
   notes: string;
 };
 
+// コピペ用テンプレート: 日付以外のフィールド
+export type EventCopyTemplate = Omit<EventFormData, 'event_date'>;
+
 type Props = {
   event: CalendarEvent | null;
   defaultDate?: string;
+  template?: EventCopyTemplate | null;
   profiles: Profile[];
   stores: Store[];
   onSave: (data: EventFormData, id?: string) => Promise<void>;
+  onCopy?: (e: CalendarEvent) => void;
   onDelete?: (id: string) => Promise<void>;
   onClose: () => void;
 };
 
-export default function EventModal({ event, defaultDate, profiles, stores, onSave, onDelete, onClose }: Props) {
-  const [form, setForm] = useState<EventFormData>({
-    title: '',
-    event_date: defaultDate || '',
-    start_time: '',
-    end_time: '',
-    assignee_id: '',
-    store_id: '',
-    notes: '',
+export default function EventModal({ event, defaultDate, template, profiles, stores, onSave, onCopy, onDelete, onClose }: Props) {
+  const [form, setForm] = useState<EventFormData>(() => {
+    if (event) {
+      return {
+        title: event.title,
+        event_date: event.event_date,
+        start_time: event.start_time || '',
+        end_time: event.end_time || '',
+        assignee_id: event.assignee_id || '',
+        store_id: event.store_id?.toString() || '',
+        notes: event.notes || '',
+      };
+    }
+    if (template) {
+      return { ...template, event_date: defaultDate || '' };
+    }
+    return {
+      title: '',
+      event_date: defaultDate || '',
+      start_time: '',
+      end_time: '',
+      assignee_id: '',
+      store_id: '',
+      notes: '',
+    };
   });
   const [saving, setSaving] = useState(false);
 
@@ -164,6 +185,16 @@ export default function EventModal({ event, defaultDate, profiles, stores, onSav
             >
               {saving ? '保存中...' : '保存'}
             </button>
+            {event && onCopy && (
+              <button
+                type="button"
+                onClick={() => onCopy(event)}
+                className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                title="この予定を複製 — 日付をクリックしてペースト"
+              >
+                📋 コピー
+              </button>
+            )}
             {event && onDelete && (
               <button
                 type="button"
