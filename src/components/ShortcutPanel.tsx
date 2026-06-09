@@ -52,7 +52,6 @@ export default function ShortcutPanel() {
 
   const handleAdd = () => {
     if (!newName.trim() || !newUrl.trim()) return;
-    if (shortcuts.length >= 10) return;
     const sc: Shortcut = {
       id: Date.now().toString(),
       name: newName.trim(),
@@ -105,7 +104,7 @@ export default function ShortcutPanel() {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2 flex-shrink-0">
         <h3 className="text-xs font-bold text-gray-700">ショートカット</h3>
-        {shortcuts.length < 10 && !adding && (
+        {!adding && (
           <button
             onClick={() => setAdding(true)}
             className="text-[10px] text-indigo-600 hover:text-indigo-800 font-medium"
